@@ -24,4 +24,4 @@ const WorkSpace = () => {
   )
 }
 
-export default WorkSpace
+export default WorkSpace;
