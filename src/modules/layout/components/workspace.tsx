@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import CreateWorkspace from "./create-workspace";
 import { Separator } from "@/components/ui/separator";
 import { useWorkspaces } from "@/modules/workspace/hooks/workspace";
 import { useWorkspaceStore } from "../store";
@@ -84,6 +85,7 @@ const WorkSpace = () => {
           </SelectContent>
         </Select>
       </Hint>
+      <CreateWorkspace isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />
     </>
   );
 };
