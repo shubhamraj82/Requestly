@@ -51,7 +51,7 @@ export const initializeWorkspace=async()=>{
 }
 
 
-export async function getWorkspace() {
+export async function getWorkspaces() {
     const user = await currentUser();
     if(!user) throw new Error("Unauthorized");
 
