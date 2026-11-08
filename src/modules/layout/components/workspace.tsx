@@ -17,6 +17,7 @@ import CreateWorkspace from "./create-workspace";
 import { Separator } from "@/components/ui/separator";
 import { useWorkspaces } from "@/modules/workspace/hooks/workspace";
 import { useWorkspaceStore } from "../store";
+import { toast } from "sonner";
 
 const WorkSpace = () => {
   const { data: workspaces, isLoading } = useWorkspaces();
@@ -47,8 +48,9 @@ const WorkSpace = () => {
           value={selectedWorkspace?.id}
           onValueChange={(id) => {
             const ws = workspaces.find((w) => w.id === id);
-            if (ws) {
+            if (ws && ws.id !== selectedWorkspace?.id) {
               setSelectedWorkspace(ws);
+              toast.success(`Switched to ${ws.name} workspace`);
             }
           }}
         >
