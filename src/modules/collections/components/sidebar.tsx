@@ -14,6 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import CreateCollection from "./create-collection";
+import EmptyCollections from "./empty-collection";
+import CollectionFolder from "./collection-folder";
 
 interface Props {
   currentWorkspace: {
@@ -74,12 +76,20 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
             </div>
 
             <div className="p-4 border-b border-zinc-800">
-                <Button variant={"ghost"} onClick={()=> setIsModalOpen(true)}>
-                    <Plus className="w-4 h-4"/>
-                    <span className="text-sm font-medium">New</span>
-                </Button>
+              <Button variant={"ghost"} onClick={() => setIsModalOpen(true)}>
+                <Plus className="w-4 h-4" />
+                <span className="text-sm font-medium">New</span>
+              </Button>
             </div>
-
+            {
+              collections && collections.length >0 ?(
+                collections.map((collection)=>(
+                  <div className="flex flex-col justify-start items-start p-3 border-b border-zinc-800" key={collection.id}>
+                    <CollectionFolder collection={collection}/>
+                  </div>
+                ))
+              ):(<EmptyCollections/>)
+            }
           </div>
         );
       default:
@@ -109,9 +119,9 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
       </div>
 
       <CreateCollection
-      workspaceId={currentWorkspace?.id}
-      isModalOpen={isModalOpen}
-      setIsModalOpen={setIsModalOpen}
+        workspaceId={currentWorkspace?.id}
+        isModalOpen={isModalOpen}
+        setIsModalOpen={setIsModalOpen}
       />
     </div>
   );
