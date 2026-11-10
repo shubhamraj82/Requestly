@@ -3,11 +3,14 @@ import Header from "@/modules/layout/components/headers";
 import { initializeWorkspace } from "@/modules/workspace/actions";
 import React from "react";
 
+export const dynamic = "force-dynamic";
+
 const RootLayout= async({children}:{children:React.ReactNode})=>{
 
-    const workspace=await initializeWorkspace();
-    console.log(workspace)
     const user=await currentUser();
+    if (user) {
+        await initializeWorkspace();
+    }
     return (
         <>
         {/* @ts-ignore */}

@@ -5,9 +5,14 @@ import db from "@/lib/db";
 import { headers } from "next/headers"
 
 export const currentUser = async ()=>{
+    // Keep request-time data access outside the catch block. Next uses the
+    // dynamic-render signal from headers() during prerendering, and swallowing
+    // it here makes a valid request-time route look like an unauthenticated user.
+    const requestHeaders = await headers();
+
     try{
         const session = await auth.api.getSession({
-            headers:await headers()
+            headers:requestHeaders
         });
 
         if(!session){
