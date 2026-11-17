@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   addRequestToCollection,
   saveRequest,
+  deleteRequest,
   getAllRequestFromCollection,
   Request,
 } from "../actions";
@@ -33,4 +34,14 @@ export function useSaveREquest(id:string){
             console.log("Request updated successfully",data);
         }
     })
+}
+
+export function useDeleteRequest(id: string, collectionId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => deleteRequest(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["requests", collectionId] });
+    },
+  });
 }
