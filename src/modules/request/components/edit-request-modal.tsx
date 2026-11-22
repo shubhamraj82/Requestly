@@ -1,7 +1,7 @@
 "use client";
 
 import Modal from "@/components/ui/modal";
-import { useSaveREquest } from "@/modules/request/hooks/request";
+import { useSaveRequest } from "@/modules/request/hooks/request";
 import { REST_METHOD } from "@prisma/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -25,7 +25,7 @@ export default function EditRequestModal({
   const [name, setName] = useState(request.name);
   const [method, setMethod] = useState(request.method);
   const [url, setUrl] = useState(request.url);
-  const { mutateAsync, isPending } = useSaveREquest(request.id);
+  const { mutateAsync, isPending } = useSaveRequest(request.id);
 
   useEffect(() => {
     if (!isModalOpen) return;

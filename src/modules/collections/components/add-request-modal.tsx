@@ -19,7 +19,7 @@ interface Props {
         url:string;
     };
     initialName?:string;
-    collectionId:string;
+    collectionId?:string;
 }
  const SaveRequestToCollectionModal=(
     {
@@ -31,7 +31,7 @@ interface Props {
           method: REST_METHOD.GET,
         },
         initialName = "Untitled",
-        collectionId
+      collectionId = ""
       }:Props
  )=>{
     const [requestName, setRequestName] = useState(initialName);
@@ -58,7 +58,7 @@ interface Props {
       setSelectedCollectionId(collectionId || "");
       setSearchTerm("");
     }
-  }, [isModalOpen, requestData.name, initialName]);
+  }, [isModalOpen, requestData.name, initialName, collectionId]);
 
   useEffect(() => {
     if (!isModalOpen) return;
@@ -152,7 +152,7 @@ interface Props {
           />
         </div>
 
-
+        
         <div className="space-y-1 max-h-48 overflow-y-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
