@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   addRequestToCollection,
   saveRequest,
+  run,
   deleteRequest,
   getAllRequestFromCollection,
   Request,
@@ -47,6 +48,28 @@ export function useDeleteRequest(id: string, collectionId: string) {
     mutationFn: async () => deleteRequest(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["requests", collectionId] });
+    },
+  });
+}
+
+
+export function useRunRequest() {
+
+  const {setResponseViewerData} = useRequestPlaygroundStore();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (requestData: {
+      requestId?: string;
+      method: string;
+      url: string;
+      headers?: string;
+      parameters?: string;
+      body?: string;
+    }) => await run(requestData),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["requests"] });
+      // @ts-ignore
+      setResponseViewerData(data);
     },
   });
 }

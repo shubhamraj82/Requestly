@@ -41,10 +41,8 @@ type PlaygroundState = {
   setResponseViewerData: (data:ResponseData) => void
 };
 
-// @ts-ignore
-
 export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
-     responseViewerData:null,
+  responseViewerData:null,
   setResponseViewerData: (data) => set({ responseViewerData: data }),
   tabs: [
     {
@@ -77,7 +75,7 @@ export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
       };
     }),
 
-     closeTab: (id) =>
+  closeTab: (id) =>
     set((state) => {
       const newTabs = state.tabs.filter((t) => t.id !== id);
       const newActive =
@@ -86,7 +84,8 @@ export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
           : state.activeTabId;
       return { tabs: newTabs, activeTabId: newActive };
     }),
-    setActiveTab: (id) => set({ activeTabId: id }),
+
+  setActiveTab: (id) => set({ activeTabId: id }),
 
   updateTab: (id, data) =>
     set((state) => ({
@@ -129,7 +128,8 @@ export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
         activeTabId: newTab.id,
       };
     }),
-      updateTabFromSavedRequest: (tabId: string, savedRequest: SavedRequest) =>
+
+    updateTabFromSavedRequest: (tabId: string, savedRequest: SavedRequest) =>
   set((state) => ({
     tabs: state.tabs.map((t) =>
       t.id === tabId
@@ -148,4 +148,5 @@ export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
     ),
     activeTabId: savedRequest.id, // ✅ keep active in sync
   })),
-}))
+
+}));

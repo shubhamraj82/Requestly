@@ -23,7 +23,7 @@ interface Props {
 
 const RequestBar = ({ tab, updateTab }: Props) => {
 
-  const {mutateAsync , isPending , isError} = useRunRequest(tab?.requestId!);
+  const {mutateAsync , isPending} = useRunRequest();
   const requestColorMap: Record<string, string> = {
     GET: "text-green-500",
     POST: "text-blue-500",
@@ -33,9 +33,20 @@ const RequestBar = ({ tab, updateTab }: Props) => {
 
   const onSendRequest = async () => {
     try {
-      const res = await mutateAsync();
-      
-      toast.success('Request sent successfully!');
+      const res = await mutateAsync({
+        requestId: tab.requestId,
+        method: tab.method,
+        url: tab.url,
+        headers: tab.headers,
+        parameters: tab.parameters,
+        body: tab.body,
+      });
+
+      if (res.success) {
+        toast.success('Request sent successfully!');
+      } else {
+        toast.error(res.error || 'Request failed.');
+      }
     } catch (error) {
       toast.error('Failed to send request.');
     }

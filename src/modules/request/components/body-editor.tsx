@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { useForm } from 'react-hook-form'
- import { zodResolver } from '@hookform/resolvers/zod'
+import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
@@ -26,7 +26,7 @@ import { RotateCcw, Copy, Check, Code, AlignLeft, FileText, Sparkles } from 'luc
 import { cn } from '@/lib/utils'
 import { useGenerateJsonBody } from '@/modules/ai/hooks/ai-suggestion'
 
-import { useWorkspaceStore } from '@/modules/Layout/store'
+import { useWorkspaceStore } from '@/modules/layout/store'
 import { useRequestPlaygroundStore } from '../store/useRequestStore'
 
 

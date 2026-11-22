@@ -41,7 +41,8 @@ interface Result {
 
 export interface ResponseData {
   success: boolean;
-  requestRun: RequestRun;
+  // A run can be missing when the request fails before it is persisted.
+  requestRun?: RequestRun;
   result?: Result;
 }
 
@@ -51,6 +52,8 @@ interface Props {
 
 const ResponseViewer = ({ responseData }: Props) => {
   const [activeTab, setActiveTab] = useState("json");
+  const requestRun = responseData?.requestRun;
+  const responseHeaders = requestRun?.headers ?? {};
 
   const getStatusColor = (status?: number): string => {
     const s = typeof status === "number" ? status : 0;
@@ -80,7 +83,7 @@ const ResponseViewer = ({ responseData }: Props) => {
   let responseBody: unknown = {};
   let formattedJsonString = "";
   try {
-    const rawBody = responseData?.requestRun?.body;
+    const rawBody = requestRun?.body;
     if (typeof rawBody === "string") {
       responseBody = rawBody.length ? JSON.parse(rawBody) : rawBody;
     } else {
@@ -89,7 +92,7 @@ const ResponseViewer = ({ responseData }: Props) => {
     formattedJsonString = JSON.stringify(responseBody, null, 2);
   } catch (e) {
     // If parsing fails, fall back to the raw string
-    responseBody = responseData?.requestRun?.body ?? {};
+    responseBody = requestRun?.body ?? {};
     formattedJsonString =
       typeof responseBody === "string"
         ? responseBody
@@ -97,13 +100,13 @@ const ResponseViewer = ({ responseData }: Props) => {
   }
 
   const status: number | undefined =
-    responseData.result?.status ?? responseData.requestRun?.status;
+    responseData?.result?.status ?? requestRun?.status;
   const statusText: string | undefined =
-    responseData.result?.statusText ?? responseData.requestRun?.statusText;
+    responseData?.result?.statusText ?? requestRun?.statusText;
   const duration: number | undefined =
-    responseData.result?.duration ?? responseData.requestRun?.durationMs;
-  const size: number | undefined = responseData.result?.size;
-  const rawBody = responseData.requestRun?.body;
+    responseData?.result?.duration ?? requestRun?.durationMs;
+  const size: number | undefined = responseData?.result?.size;
+  const rawBody = requestRun?.body;
 
   return (
     <div className="w-full bg-zinc-950 text-white p-6">
@@ -203,8 +206,7 @@ const ResponseViewer = ({ responseData }: Props) => {
                       className="ml-2 text-xs bg-zinc-700"
                     >
                       {
-                        Object.keys(responseData.requestRun.headers ?? {})
-                          .length
+                        Object.keys(responseHeaders).length
                       }
                     </Badge>
                   </TabsTrigger>
@@ -311,7 +313,7 @@ const ResponseViewer = ({ responseData }: Props) => {
                   <div className="p-6">
                     <div className="space-y-3">
                       {Object.entries(
-                        responseData.requestRun.headers ?? {}
+                        responseHeaders
                       ).map(([key, value]) => (
                         <div
                           key={key}
