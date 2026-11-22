@@ -93,9 +93,11 @@ export async function sendRequest(req: {
     const end = performance.now();
 
     const duration = end - start;
+    const contentLength = Number(res.headers["content-length"]);
     const size =
-      res.headers["content-length"] ||
-      new TextEncoder().encode(JSON.stringify(res.data)).length;
+      Number.isFinite(contentLength) && contentLength >= 0
+        ? contentLength
+        : new TextEncoder().encode(JSON.stringify(res.data)).length;
 
     return {
       status: res.status,        
@@ -233,7 +235,7 @@ export async function runDirect(requestData: {
         status: result.status || 0,
         statusText: result.statusText || (result.error ? 'Error' : null),
         headers: result.headers || "",
-        body: result.data ? (typeof result.data === 'string' ? result.data : JSON.stringify(result.data)) : null,
+        body: result.data ?? undefined,
         durationMs: result.duration || 0
       }
     });
