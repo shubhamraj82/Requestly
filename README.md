@@ -104,4 +104,4 @@ Generate and accept operations are rate-limited per authenticated user in Postgr
 
 Start the app with the local PostgreSQL migrations applied. Run `node tests/workspace-access.mjs` to exercise invitation limits, authenticated joins, cross-workspace isolation, editing grants, admin-only deletion, suspensions, and audit retention. The test creates and cleans up temporary accounts and workspaces. Set `WS_TEST_BASE=http://127.0.0.1:PORT` if the app uses another port. The WebSocket regression suite above additionally requires `WS_LOCAL_FIXTURE=1` on the development server.
 
-Invitation links use the verified production domain supplied by Vercel. To use that domain during local development or override it with a custom domain, set `INVITE_BASE_URL` to the full HTTPS origin in `.env.local`. Generate shared invitations in the environment whose database will process the join.
+Invitation links use the address where you open the app, including the port on localhost. To invite someone to the deployed workspace, generate the link from that deployment.

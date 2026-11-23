@@ -23,7 +23,7 @@ export default function InviteTab({
   const canGenerate =
     panel.access.role === "ADMIN" && panel.access.rights.invite;
   const invitationUrl = (token: string) =>
-    new URL("/invite/" + token, panel.inviteOrigin ?? window.location.origin).href;
+    new URL("/invite/" + token, window.location.origin).href;
   const generate = async (replace?: string) => {
     const maxUses = limit === "" ? null : Number(limit);
     if (

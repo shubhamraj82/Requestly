@@ -171,11 +171,6 @@ export async function accessPanel(workspaceId: string, user: string) {
   return {
     access,
     ownerId: access.ownerId,
-    inviteOrigin: process.env.INVITE_BASE_URL
-      ? new URL(process.env.INVITE_BASE_URL).origin
-      : process.env.VERCEL_PROJECT_PRODUCTION_URL
-        ? new URL("https://" + process.env.VERCEL_PROJECT_PRODUCTION_URL).origin
-        : null,
     members: members.map((m) => ({
       ...m,
       role: m.role === "OWNER" ? ("ADMIN" as const) : m.role,
