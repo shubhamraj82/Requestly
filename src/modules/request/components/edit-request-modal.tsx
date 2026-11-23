@@ -77,7 +77,9 @@ export default function EditRequestModal({
             onChange={(event) => setMethod(event.target.value as REST_METHOD)}
           >
             {Object.values(REST_METHOD).map((value) => (
-              <option key={value} value={value}>{value}</option>
+              <option key={value} value={value}>
+                {value}
+              </option>
             ))}
           </select>
         </label>

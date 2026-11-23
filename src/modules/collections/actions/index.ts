@@ -1,6 +1,7 @@
 "use server"
 
 import db from "@/lib/db";
+import { currentUser } from "@/modules/authentication/actions";
 
 export const createCollection = async (workspaceId:string, name:string)=>{
     const collection = await db.collection.create({
@@ -26,9 +27,12 @@ export const getCollection=async(workspaceId:string)=>{
 }
 
 export const  deleteCollection=async(collectionId:string)=>{
+    const user = await currentUser();
+    if (!user) throw new Error("Sign in to delete a collection");
     await db.collection.delete({
         where:{
-            id:collectionId
+            id:collectionId,
+            workspace: { OR: [{ ownerId: user.id }, { members: { some: { userId: user.id } } }] }
         }
     })
 }

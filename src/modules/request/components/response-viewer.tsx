@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Editor from "@monaco-editor/react";
 import {
@@ -90,7 +90,7 @@ const ResponseViewer = ({ responseData }: Props) => {
       responseBody = rawBody ?? {};
     }
     formattedJsonString = JSON.stringify(responseBody, null, 2);
-  } catch (e) {
+  } catch {
     // If parsing fails, fall back to the raw string
     responseBody = requestRun?.body ?? {};
     formattedJsonString =
@@ -107,20 +107,21 @@ const ResponseViewer = ({ responseData }: Props) => {
     responseData?.result?.duration ?? requestRun?.durationMs;
   const size: number | undefined = responseData?.result?.size;
   const rawBody = requestRun?.body;
+  const rawText = typeof rawBody === "string" ? rawBody : JSON.stringify(rawBody) ?? "";
 
   return (
-    <div className="w-full bg-zinc-950 text-white p-6">
-      <div className="w-full mx-auto">
+    <div className="rest-result w-full text-white" role="region" aria-label="Response details" tabIndex={0}>
+
         {/* Status Header */}
-        <Card className="bg-zinc-900 border-zinc-800 mb-6">
-          <CardHeader className="pb-3">
+        <Card className="bg-zinc-900 border-zinc-800 shrink-0 py-2">
+          <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   <span className="text-gray-400">Status:</span>
                   <Badge
                     className={`${getStatusColor(
-                      status
+                      status,
                     )} bg-transparent border-current`}
                   >
                     {status ?? "—"} • {statusText ?? ""}
@@ -169,10 +170,7 @@ const ResponseViewer = ({ responseData }: Props) => {
         </Card>
 
         {/* Response Tabs */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-gray-200">Response Body</CardTitle>
-          </CardHeader>
+        <Card className="rest-response-tabs bg-zinc-900 border-zinc-800 py-0">
           <CardContent className="p-0">
             <Tabs
               value={activeTab}
@@ -205,9 +203,7 @@ const ResponseViewer = ({ responseData }: Props) => {
                       variant="secondary"
                       className="ml-2 text-xs bg-zinc-700"
                     >
-                      {
-                        Object.keys(responseHeaders).length
-                      }
+                      {Object.keys(responseHeaders).length}
                     </Badge>
                   </TabsTrigger>
                   <TabsTrigger
@@ -220,101 +216,66 @@ const ResponseViewer = ({ responseData }: Props) => {
                 </TabsList>
               </div>
 
-              <TabsContent value="json" className="mt-0">
-                <div className="relative">
-                  <div className="absolute top-4 right-4 z-10">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-gray-400 hover:text-white bg-zinc-800/50 backdrop-blur-sm"
-                      onClick={() => copyToClipboard(formattedJsonString)}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <div className="h-96">
-                    <Editor
-                      height="100%"
-                      defaultLanguage="json"
-                      value={formattedJsonString}
-                      options={{
-                        readOnly: true,
-                        minimap: { enabled: false },
-                        scrollBeyondLastLine: false,
-                        fontSize: 14,
-                        wordWrap: "on",
-                        fontFamily:
-                          'ui-monospace, SFMono-Regular, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                        lineNumbers: "on",
-                        glyphMargin: false,
-                        folding: true,
-                        lineDecorationsWidth: 0,
-                        lineNumbersMinChars: 3,
-                        renderLineHighlight: "none",
-                        scrollbar: {
-                          vertical: "auto",
-                          horizontal: "auto",
-                          verticalScrollbarSize: 8,
-                          horizontalScrollbarSize: 8,
-                        },
-                      }}
-                      theme="vs-dark"
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="raw" className="mt-0">
-                <div className="relative">
-                  <div className="absolute top-4 right-4 z-10">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-gray-400 hover:text-white"
-                      onClick={() => copyToClipboard(String(rawBody ?? ""))}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <div className="h-96">
-                    <Editor
-                      height="100%"
-                      defaultLanguage="text"
-                      value={String(rawBody ?? "")}
-                      options={{
-                        readOnly: true,
-                        minimap: { enabled: false },
-                        scrollBeyondLastLine: false,
-                        fontSize: 14,
-                        fontFamily:
-                          'ui-monospace, SFMono-Regular, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                        wordWrap: "on",
-                        lineNumbers: "on",
-                        glyphMargin: false,
-                        folding: true,
-                        lineDecorationsWidth: 0,
-                        lineNumbersMinChars: 3,
-                        renderLineHighlight: "none",
-                        scrollbar: {
-                          vertical: "auto",
-                          horizontal: "auto",
-                          verticalScrollbarSize: 8,
-                          horizontalScrollbarSize: 8,
-                        },
-                      }}
-                      theme="vs-dark"
-                    />
-                  </div>
-                </div>
-              </TabsContent>
+              {(["json", "raw"] as const).map((view) => {
+                const text = view === "json" ? formattedJsonString : rawText;
+                return (
+                  <TabsContent key={view} value={view} className="mt-0 min-w-0">
+                    <div className="relative h-full">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="absolute top-2 right-4 z-10 bg-zinc-800 text-gray-400 hover:text-white"
+                        aria-label="Copy response body"
+                        onClick={() => copyToClipboard(text)}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                      <Editor
+                        height="100%"
+                        defaultLanguage={view === "json" ? "json" : "plaintext"}
+                        value={text}
+                        loading={
+                          <pre
+                            tabIndex={0}
+                            aria-label="Response body"
+                            className="h-full w-full overflow-auto whitespace-pre-wrap wrap-anywhere p-3 pr-16 font-mono text-sm"
+                          >
+                            {text}
+                          </pre>
+                        }
+                        options={{
+                          readOnly: true,
+                          automaticLayout: true,
+                          minimap: { enabled: false },
+                          scrollBeyondLastLine: false,
+                          fontSize: 14,
+                          wordWrap: "on",
+                          fontFamily:
+                            'ui-monospace, SFMono-Regular, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                          lineNumbers: "on",
+                          glyphMargin: false,
+                          folding: true,
+                          lineDecorationsWidth: 0,
+                          lineNumbersMinChars: 3,
+                          renderLineHighlight: "none",
+                          scrollbar: {
+                            vertical: "visible",
+                            horizontal: "auto",
+                            alwaysConsumeMouseWheel: false,
+                          },
+                        }}
+                        theme="vs-dark"
+                      />
+                    </div>
+                  </TabsContent>
+                );
+              })}
 
               <TabsContent value="headers" className="mt-0">
-                <ScrollArea className="h-96">
+                <ScrollArea className="h-full">
                   <div className="p-6">
                     <div className="space-y-3">
-                      {Object.entries(
-                        responseHeaders
-                      ).map(([key, value]) => (
+                      {Object.entries(responseHeaders).map(([key, value]) => (
                         <div
                           key={key}
                           className="flex items-start justify-between py-2 border-b border-zinc-800 last:border-b-0"
@@ -373,7 +334,6 @@ const ResponseViewer = ({ responseData }: Props) => {
             </Tabs>
           </CardContent>
         </Card>
-      </div>
     </div>
   );
 };
