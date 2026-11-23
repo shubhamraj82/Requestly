@@ -60,7 +60,7 @@ interface BodyEditorProps {
 }
 
 const BodyEditor: React.FC<BodyEditorProps> = ({
-  readOnly=false,
+  readOnly = false,
   initialData = { contentType: "application/json", body: "" },
   onSubmit,
   className,
@@ -182,7 +182,8 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
                   name="contentType"
                   render={({ field }) => (
                     <FormItem>
-                      <Select disabled={readOnly}
+                      <Select
+                        disabled={readOnly}
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
@@ -237,7 +238,8 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
                 type="button"
                 variant="ghost"
                 size="sm"
-                disabled={readOnly} onClick={handleFormat}
+                disabled={readOnly}
+                onClick={handleFormat}
                 className="h-7 px-2 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700"
                 title="Format JSON"
               >
@@ -261,7 +263,8 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
                 type="button"
                 variant="ghost"
                 size="sm"
-                disabled={readOnly} onClick={handleReset}
+                disabled={readOnly}
+                onClick={handleReset}
                 className="h-7 px-2 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700"
                 title="Clear content"
               >
@@ -320,7 +323,8 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
               type="button"
               size="sm"
               className="bg-indigo-400 hover:bg-indigo-500 text-white h-7"
-              disabled={readOnly} onClick={() => form.handleSubmit(onSubmit)()}
+              disabled={readOnly}
+              onClick={() => form.handleSubmit(onSubmit)()}
             >
               Update Body
             </Button>
