@@ -223,6 +223,7 @@ try {
 } finally {
   for (const client of fixture.clients) client.terminate();
   fixture.close();
+  await db.workspaceActivity.deleteMany({where:{workspaceId:workspace}});
   await db.workspace.deleteMany({ where: { id: workspace } });
   await db.user.deleteMany({ where: { id: { in: [userId, outsider] } } });
   await db.$disconnect();

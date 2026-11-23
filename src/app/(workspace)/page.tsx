@@ -11,8 +11,9 @@ import RequestPlayground from "@/modules/request/components/request-playground"
 const Page=()=>{
   const {selectedWorkspace}=useWorkspaceStore();
  
-  const {data:currentWorkspace,isPending}= useGetWorkspace(selectedWorkspace?.id||"");
+  const {data:currentWorkspace,isPending,isError}= useGetWorkspace(selectedWorkspace?.id||"");
 
+  if(isError || (!isPending && !currentWorkspace)) return <p className="p-6">Workspace unavailable.</p>;
   if(isPending){
     return(
       <div className="flex flex-col items-center justify-center h-full">

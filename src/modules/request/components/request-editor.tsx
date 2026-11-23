@@ -6,7 +6,7 @@ import RequestEditorArea from "./request-editor-area";
 import ResponseViewer from "./response-viewer";
 
 
-export default function RequestEditor() {
+export default function RequestEditor({editable}:{editable:boolean}) {
   const { tabs, activeTabId, updateTab ,responseViewerData
 
   } = useRequestPlaygroundStore();
@@ -18,8 +18,8 @@ export default function RequestEditor() {
     <div className="rest-editor" data-has-response={Boolean(responseViewerData)}>
       <section className="rest-card">
         <h2>Request</h2>
-        <RequestBar tab={activeTab} updateTab={updateTab} />
-        <RequestEditorArea tab={activeTab} updateTab={updateTab} />
+        <RequestBar editable={editable} tab={activeTab} updateTab={updateTab} />
+        <RequestEditorArea editable={editable} tab={activeTab} updateTab={updateTab} />
       </section>
       <section className="rest-card rest-response">
         <h2>{responseViewerData ? "Response Body" : "Response"}</h2>

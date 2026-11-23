@@ -16,6 +16,7 @@ import {
   Folder,
   Trash,
 } from "lucide-react";
+import {useAccess} from "@/modules/workspace/hooks/workspace";
 import { useState } from "react";
 import EditCollectionModal from "./edit-collection-modal";
 import DeleteCollectionModal from "./delete-collection-modal";
@@ -39,6 +40,7 @@ interface Props {
 }
 
 const CollectionFolder = ({ collection }: Props) => {
+  const access=useAccess();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isAddRequestOpen, setIsAddRequestOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -88,9 +90,9 @@ const CollectionFolder = ({ collection }: Props) => {
             </CollapsibleTrigger>
 
             <div className="flex flex-row justify-center items-center space-x-2">
-              <FilePlus className="h-4 w-4 text-zinc-400 hover:text-indigo-400" 
+              {access?.rights.createRequests && <FilePlus className="h-4 w-4 text-zinc-400 hover:text-indigo-400"
               onClick={()=>setIsAddRequestOpen(true)}
-              />
+              />}
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -99,7 +101,7 @@ const CollectionFolder = ({ collection }: Props) => {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-48">
-                  <DropdownMenuItem onClick={() => setIsAddRequestOpen(true)}>
+                  <DropdownMenuItem disabled={!access?.rights.createRequests} onClick={() => setIsAddRequestOpen(true)}>
                     <div className="flex flex-row justify-between items-center w-full">
                       <div className="font-semibold flex justify-center items-center">
                         <FilePlus className="text-green-400 mr-2 w-4 h-4" />
@@ -110,7 +112,7 @@ const CollectionFolder = ({ collection }: Props) => {
                       </span>
                     </div>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsEditOpen(true)}>
+                  <DropdownMenuItem disabled={!access?.rights.editWorkspace} onClick={() => setIsEditOpen(true)}>
                     <div className="flex flex-row justify-between items-center w-full">
                       <div className="font-semibold flex justify-center items-center">
                         <Edit className="text-blue-400 mr-2 w-4 h-4" />
@@ -121,7 +123,7 @@ const CollectionFolder = ({ collection }: Props) => {
                       </span>
                     </div>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsDeleteOpen(true)}>
+                  <DropdownMenuItem disabled={access?.role!=="ADMIN"} onClick={() => setIsDeleteOpen(true)}>
                     <div className="flex flex-row justify-between items-center w-full">
                       <div className="font-semibold flex justify-center items-center">
                         <Trash className="text-red-400 mr-2 w-4 h-4" />
@@ -195,11 +197,11 @@ const CollectionFolder = ({ collection }: Props) => {
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-32">
-                          <DropdownMenuItem onClick={() => setRequestToEdit(request)}>
+                          <DropdownMenuItem disabled={!access || !(access.rights.editAll || (access.rights.editOwn && request.authorId===access.userId))} onClick={() => setRequestToEdit(request)}>
                             <Edit className="text-blue-400 mr-2 w-3 h-3" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setRequestToDelete(request)}>
+                          <DropdownMenuItem disabled={access?.role!=="ADMIN"} onClick={() => setRequestToDelete(request)}>
                             <Trash className="text-red-400 mr-2 w-3 h-3" />
                             Delete
                           </DropdownMenuItem>

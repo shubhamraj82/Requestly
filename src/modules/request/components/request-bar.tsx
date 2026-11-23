@@ -17,11 +17,12 @@ import { useRunRequest } from "../hooks/request";
 import { toast } from "sonner";
 
 interface Props {
+  editable:boolean;
   tab: RequestTab;
   updateTab: (id: string, data: Partial<RequestTab>) => void;
 }
 
-const RequestBar = ({ tab, updateTab }: Props) => {
+const RequestBar = ({ tab, updateTab,editable }: Props) => {
   const { mutateAsync, isPending } = useRunRequest();
   const requestColorMap: Record<string, string> = {
     GET: "text-green-500",
@@ -54,7 +55,7 @@ const RequestBar = ({ tab, updateTab }: Props) => {
   return (
     <div className="rest-url flex flex-row items-center gap-2 w-full">
       <div className="flex flex-row items-center gap-2 flex-1 min-w-0">
-        <Select
+        <Select disabled={!editable}
           value={tab.method}
           onValueChange={(value) => updateTab(tab.id, { method: value })}
         >
@@ -82,6 +83,7 @@ const RequestBar = ({ tab, updateTab }: Props) => {
         </Select>
 
         <Input
+          readOnly={!editable}
           value={tab.url || ""}
           onChange={(e) => updateTab(tab.id, { url: e.target.value })}
           placeholder="Enter URL"
@@ -92,7 +94,7 @@ const RequestBar = ({ tab, updateTab }: Props) => {
       <Button
         type="submit"
         onClick={onSendRequest}
-        disabled={isPending || !tab.url}
+        disabled={!editable || isPending || !tab.url}
         className="rest-action"
       >
         <Send size={15} />

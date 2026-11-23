@@ -8,11 +8,12 @@ import BodyEditor from "./body-editor";
 import { toast } from "sonner";
 
 interface Props {
+  editable:boolean;
   tab: RequestTab;
   updateTab: (id: string, data: Partial<RequestTab>) => void;
 }
 
-const RequestEditorArea = ({ tab, updateTab }: Props) => {
+const RequestEditorArea = ({ tab, updateTab,editable }: Props) => {
   const parseKeyValueData = (jsonString?: string) => {
     if (!jsonString) return [];
     try {
@@ -84,7 +85,7 @@ const RequestEditorArea = ({ tab, updateTab }: Props) => {
       </TabsList>
 
       <TabsContent value="parameters">
-        <KeyValueFormEditor
+        <fieldset disabled={!editable}><KeyValueFormEditor
           initialData={getParametersData()}
           onSubmit={handleParametersChange}
           placeholder={{
@@ -92,11 +93,11 @@ const RequestEditorArea = ({ tab, updateTab }: Props) => {
             value: "Parameter Value",
             description: "URL Parameter",
           }}
-        />
+        /></fieldset>
       </TabsContent>
 
       <TabsContent value="headers">
-        <KeyValueFormEditor
+        <fieldset disabled={!editable}><KeyValueFormEditor
           initialData={getHeadersData()}
           onSubmit={handleHeadersChange}
           placeholder={{
@@ -104,11 +105,11 @@ const RequestEditorArea = ({ tab, updateTab }: Props) => {
             value: "Header Value",
             description: "HTTP Header",
           }}
-        />
+        /></fieldset>
       </TabsContent>
 
       <TabsContent value="body">
-        <BodyEditor initialData={getBodyData()} onSubmit={handleBodyChange} />
+        <BodyEditor readOnly={!editable} initialData={getBodyData()} onSubmit={handleBodyChange} />
       </TabsContent>
     </Tabs>
   );

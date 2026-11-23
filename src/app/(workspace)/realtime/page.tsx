@@ -22,6 +22,7 @@ import {
   type Definition,
   useSockets,
 } from "@/modules/realtime/hooks/useWs";
+import {useAccess} from "@/modules/workspace/hooks/workspace";
 import ConnectionBar from "@/modules/realtime/components/realtime-connection-bar";
 import MessageEditor from "@/modules/realtime/components/realtime-message-editor";
 import Timeline from "@/modules/realtime/components/realtime-client-server-logs-table";
@@ -42,6 +43,7 @@ function Tester({
   workspace: string;
   initial: string;
 }) {
+  const access=useAccess();
   const [cursor, setCursor] = useState("");
   const listing = useSockets(workspace, cursor);
   const cache = useQueryClient();
@@ -197,6 +199,9 @@ function Tester({
       setBusy(false);
     }
   }
+  if(!access) return <p className="p-6">Checking workspace access…</p>;
+  const definition=listing.data?.definitions.find(d=>d.id===id);
+  const canSave=id?access.rights.editAll || (access.rights.editOwn && definition?.authorId===access.userId):access.rights.createRequests;
   const active = ["connected", "connecting", "reconnecting"].includes(status);
   return (
     <main className="ws-studio">
@@ -229,7 +234,7 @@ function Tester({
             control={
               <Button
                 className="ws-primary"
-                disabled={busy || (!active && !settings.url)}
+                disabled={busy || (!active && (!settings.url || !access.rights.createRequests))}
                 onClick={() => action(active ? "disconnect" : "connect")}
               >
                 {active ? "Disconnect" : "Connect"}
@@ -246,7 +251,7 @@ function Tester({
               </h2>
               <MessageEditor
                 {...{ settings, change }}
-                connected={!busy && status === "connected"}
+                connected={access.rights.createRequests && !busy && status === "connected"}
                 send={action}
               />
             </section>
@@ -320,12 +325,12 @@ function Tester({
                 </select>
                 <Button
                   variant="outline"
-                  disabled={busy || !name || !collection}
+                  disabled={!canSave || busy || !name || !collection}
                   onClick={() => action("save")}
                 >
                   Save to collection
                 </Button>
-                {id && (
+                {id && access.role==="ADMIN" && (
                   <Button
                     variant="ghost"
                     disabled={busy}

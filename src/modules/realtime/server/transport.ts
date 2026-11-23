@@ -9,6 +9,8 @@ import type { Settings } from "../settings";
 
 const limit = 65536;
 type Active = {
+  workspaceId:string;
+  userId:string;
   ws: WebSocket;
   record: (
     kind: string,
@@ -32,21 +34,25 @@ function notify(id: string) {
 export function workspaceChanged(id: string) {
   signals.emit("workspace:" + id);
 }
-export function workspaceStream(id: string, signal: AbortSignal) {
+export function workspaceStream(id: string, signal: AbortSignal, check:()=>Promise<void>) {
   const encoder = new TextEncoder();
   let cleanup = () => {};
   return new ReadableStream<Uint8Array>({
     start(controller) {
-      const push = () => {
-        if ((controller.desiredSize ?? 0) > 0)
+      let closed = false;
+      const push = async () => {
+        try { await check(); } catch {finish();return;}
+        if (!closed && (controller.desiredSize ?? 0) > 0)
           controller.enqueue(encoder.encode("retry: 250\ndata: changed\n\n"));
       };
       const finish = () => {
+        if(closed) return;
         cleanup();
         controller.close();
       };
       const timer = setTimeout(finish, 30000);
       cleanup = () => {
+        closed = true;
         clearTimeout(timer);
         signals.off("workspace:" + id, push);
         signal.removeEventListener("abort", finish);
@@ -135,6 +141,7 @@ export function start(
   workspaceId: string,
   settings: Settings,
   secrets: Record<string, string>,
+  userId:string,
 ) {
   const url = destination(settings, secrets);
   const host = url.hostname.replace(/^\[|\]$/g, "");
@@ -241,7 +248,7 @@ export function start(
   const emit = (...args: Parameters<typeof record>) => {
     void record(...args).catch(() => {});
   };
-  clients.set(id, { ws, record });
+  clients.set(id, { ws, record, workspaceId, userId });
   const timeout = setTimeout(() => ws.terminate(), 30 * 60_000);
   emit("connecting");
   const noteHandshake = (res: import("node:http").IncomingMessage) => {
@@ -342,4 +349,11 @@ export async function command(
     throw error;
   });
   await record(action === "ping" ? "ping sent" : "sent", payload, format);
+}
+
+export function terminateWorkspaceConnections(workspaceId:string,userId?:string) {
+  for (const client of clients.values()) {
+    if(client.workspaceId===workspaceId && (!userId || client.userId===userId)) client.ws.terminate();
+  }
+  workspaceChanged(workspaceId);
 }

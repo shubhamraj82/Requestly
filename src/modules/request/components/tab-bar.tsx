@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRequestPlaygroundStore } from "../store/useRequestStore";
 import AddNameModal from "./add-name-modal";
 
-export default function TabBar() {
+export default function TabBar({canCreate}:{canCreate:boolean}) {
   const { tabs, activeTabId, setActiveTab, addTab, closeTab } =
     useRequestPlaygroundStore();
   const [renameModalOpen, setRenameModalOpen] = useState(false);
@@ -62,7 +62,7 @@ export default function TabBar() {
 
         ))}
         <button
-          aria-label="New request" title="New request" onClick={() => addTab()}
+          disabled={!canCreate} aria-label="New request" title="New request" onClick={() => addTab()}
           className="px-3 py-2 text-zinc-400 hover:text-white"
         >
           +
