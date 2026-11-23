@@ -1,5 +1,6 @@
 "use client"
 
+import "./rest.css"
 import {ResizableHandle,ResizablePanelGroup,ResizablePanel} from "@/components/ui/resizable"
 import { useWorkspaceStore } from "@/modules/layout/store"
 import {useGetWorkspace} from "@/modules/workspace/hooks/workspace"
@@ -21,14 +22,14 @@ const Page=()=>{
   }
 
   return (
-    <ResizablePanelGroup orientation="horizontal" className="min-h-0">
+    <ResizablePanelGroup orientation="horizontal" className="rest-studio min-h-0">
       <ResizablePanel defaultSize="65%" minSize="40%">
         <RequestPlayground/>
       </ResizablePanel>
       <ResizableHandle withHandle/>
 
       <ResizablePanel defaultSize="35%" maxSize="40%" minSize="25%" className="flex min-w-0">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <TabbedSidebar currentWorkspace={currentWorkspace!}    />
         </div>
       </ResizablePanel>

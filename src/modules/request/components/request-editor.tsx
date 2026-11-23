@@ -15,18 +15,18 @@ export default function RequestEditor() {
   if (!activeTab) return null;
 
   return (
-   <div className="flex flex-col items-center justify-start py-4 px-4">
-      <RequestBar tab={activeTab} updateTab={updateTab} />
-
-     <div className="flex flex-1 flex-col w-full justify-start mt-4 items-center ">
-       <RequestEditorArea tab={activeTab} updateTab={updateTab} />
-     
-     </div>
-       {
-        responseViewerData &&
-       <ResponseViewer responseData={responseViewerData} />
-       }
-      
-   </div>
+    <div className="rest-editor" data-has-response={Boolean(responseViewerData)}>
+      <section className="rest-card">
+        <h2>Request</h2>
+        <RequestBar tab={activeTab} updateTab={updateTab} />
+        <RequestEditorArea tab={activeTab} updateTab={updateTab} />
+      </section>
+      <section className="rest-card rest-response">
+        <h2>{responseViewerData ? "Response Body" : "Response"}</h2>
+        {responseViewerData ? <ResponseViewer responseData={responseViewerData} /> : (
+          <p className="rest-response-empty">Send the request to see its response.</p>
+        )}
+      </section>
+    </div>
   );
 }

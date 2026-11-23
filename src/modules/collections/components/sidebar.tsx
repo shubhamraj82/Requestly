@@ -58,7 +58,7 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
                 <span className="text-sm font-medium">Collections</span>
               </div>
 
-              <div className="flex items-centerb space-x-2">
+              <div className="flex items-center space-x-2">
                 <HelpCircle className="w-4 h-4 text-zinc-400 hover:text-zinc-300 cursor-pointer" />
                 <ExternalLink className="w-4 h-4 text-zinc-400 hover:text-zinc-300 cursor-pointer" />
               </div>
@@ -102,13 +102,14 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
   };
 
   return (
-    <div className="flex h-screen min-w-0 bg-zinc-900">
+    <div className="rest-sidebar flex h-full min-w-0 bg-zinc-900">
       <div className="w-12 bg-zinc-900 border-r border-zinc-800 flex flex-col items-center py-4 space-y-4">
         {sidebarItems.map((item, index) => (
           <div
             key={index}
+            title={item.label}
             onClick={() => setActiveTab(item.label)}
-            className={`w-8 h-8 rounded-lg flex item-center justify-center cursor-pointer transition-colors ${activeTab === item.label ? "bg-indigo-600 text-white" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"}`}
+            className={`w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors ${activeTab === item.label ? "bg-indigo-600 text-white" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"}`}
           >
             <item.icon className="w-4 h-4" />
           </div>

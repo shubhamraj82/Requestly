@@ -26,6 +26,9 @@ import EditRequestModal from "@/modules/request/components/edit-request-modal";
 import DeleteRequestModal from "@/modules/request/components/delete-request-modal";
 import { useRequestPlaygroundStore } from "@/modules/request/store/useRequestStore";
 
+import Link from "next/link";
+import { useSockets } from "@/modules/realtime/hooks/useWs";
+
 interface Props {
   collection: {
     name: string;
@@ -44,6 +47,7 @@ const CollectionFolder = ({ collection }: Props) => {
   const [requestToDelete, setRequestToDelete] = useState<any>(null);
 
   const {data:requestData,isPending,isError}=useGetAllRequestFromCollection(collection.id)
+  const sockets = useSockets(collection.workspaceId);
   const {openRequestTab} = useRequestPlaygroundStore();
 
   const requestColorMap: Record<REST_METHOD, string> = {
@@ -133,6 +137,9 @@ const CollectionFolder = ({ collection }: Props) => {
             </div>
           </div>
           <CollapsibleContent className="w-full">
+            {sockets.data?.definitions.filter(d => d.collectionId === collection.id).map(d => (
+              <Link key={d.id} className="block pl-8 py-2 text-sm" href={{ pathname: "/realtime", query: {socket:d.id} }}>WS · {d.name}</Link>
+            ))}
             {isPending ? (
               <div className="pl-8 py-2">
                 <div className="flex items-center space-x-2">

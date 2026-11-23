@@ -22,6 +22,7 @@ model User {
   image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  socketRuns SocketRun[]
   sessions      Session[]
   accounts      Account[]
 
@@ -88,6 +89,7 @@ model Workspace {
   owner User @relation("UserWorkspaces", fields:[ownerId], references:[id])
 
   members WorkspaceMember[]
+  socketRuns SocketRun[]
   collections Collection[]
 
   createdAt DateTime @default(now())
@@ -127,6 +129,7 @@ model Collection {
   workspaceId String
 
   workspace Workspace @relation(fields:[workspaceId],references:[id], onDelete:Cascade) 
+  sockets SocketDefinition[]
   requests Request[]
 
   createdAt DateTime @default(now())
@@ -176,4 +179,50 @@ model RequestRun {
 
   createdAt DateTime @default(now())
   
+}
+
+
+model SocketDefinition {
+  id String @id @default(cuid())
+  collectionId String
+  collection Collection @relation(fields:[collectionId], references:[id], onDelete:Cascade)
+  name String
+  settings Json
+  runs SocketRun[]
+  @@index([collectionId])
+}
+
+model SocketRun {
+  id String @id @default(cuid())
+  workspaceId String
+  workspace Workspace @relation(fields:[workspaceId], references:[id], onDelete:Cascade)
+  userId String
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  definitionId String?
+  definition SocketDefinition? @relation(fields:[definitionId], references:[id], onDelete:SetNull)
+  snapshot Json
+  status String
+  attempt Int @default(1)
+  protocol String?
+  handshakeStatus Int?
+  closeCode Int?
+  closeReason String?
+  error String?
+  createdAt DateTime @default(now())
+  endedAt DateTime?
+  events SocketEvent[]
+  @@index([workspaceId, createdAt, id])
+}
+
+model SocketEvent {
+  id String @id @default(cuid())
+  runId String
+  run SocketRun @relation(fields:[runId], references:[id], onDelete:Cascade)
+  seq Int
+  kind String
+  format String
+  payload String
+  bytes Int
+  createdAt DateTime @default(now())
+  @@unique([runId, seq])
 }

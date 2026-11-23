@@ -56,7 +56,8 @@ const DeleteCollectionModal = ({
           </svg>
         </div>
         <p className="text-sm leading-6 text-red-900">
-          Once deleted, all requests and data in this collection will be permanently removed.
+          Once deleted, all requests and data in this collection will be
+          permanently removed.
         </p>
       </div>
     </Modal>
