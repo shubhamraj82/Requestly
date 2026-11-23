@@ -1,49 +1,42 @@
-"use server"
-
+"use server";
 import db from "@/lib/db";
-import { currentUser } from "@/modules/authentication/actions";
+import {
+  authorize,
+  collectionAccess,
+  writeContent,
+} from "@/modules/workspace/access/server";
 
-export const createCollection = async (workspaceId:string, name:string)=>{
-    const collection = await db.collection.create({
-        data:{
-            name,
-            workspace:{
-                connect:{
-                    id:workspaceId
-                }
-            }
-        }
-    })
-    return collection;
+export async function createCollection(workspaceId: string, name: string) {
+  const access = await authorize(workspaceId, "editWorkspace");
+  return writeContent(
+    access,
+    "editWorkspace",
+    null,
+    "collection.created",
+    (tx) => tx.collection.create({ data: { workspaceId, name } }),
+  );
 }
-
-export const getCollection=async(workspaceId:string)=>{
-    const collection = await db.collection.findMany({
-        where:{
-            workspaceId
-        }
-    })
-    return collection;
+export async function getCollection(workspaceId: string) {
+  await authorize(workspaceId, "view");
+  return db.collection.findMany({ where: { workspaceId } });
 }
-
-export const  deleteCollection=async(collectionId:string)=>{
-    const user = await currentUser();
-    if (!user) throw new Error("Sign in to delete a collection");
-    await db.collection.delete({
-        where:{
-            id:collectionId,
-            workspace: { OR: [{ ownerId: user.id }, { members: { some: { userId: user.id } } }] }
-        }
-    })
+export async function deleteCollection(id: string) {
+  const access = await collectionAccess(id, "delete");
+  await writeContent(access, "delete", null, "collection.deleted", (tx) =>
+    tx.collection.delete({ where: { id, workspaceId: access.workspaceId } }),
+  );
 }
-
-export const updateCollection=async(collectionId:string,name:string)=>{
-    await db.collection.update({
-        where:{
-            id:collectionId
-        },
-        data:{
-            name
-        }
-    })
+export async function updateCollection(id: string, name: string) {
+  const access = await collectionAccess(id, "editWorkspace");
+  await writeContent(
+    access,
+    "editWorkspace",
+    null,
+    "collection.updated",
+    (tx) =>
+      tx.collection.update({
+        where: { id, workspaceId: access.workspaceId },
+        data: { name },
+      }),
+  );
 }

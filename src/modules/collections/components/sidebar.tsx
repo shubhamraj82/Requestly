@@ -1,3 +1,4 @@
+import {useAccess} from "@/modules/workspace/hooks/workspace";
 import { useState } from "react";
 import { useCollections } from "../hooks/collection";
 import {
@@ -25,6 +26,7 @@ interface Props {
 }
 
 const TabbedSidebar = ({ currentWorkspace }: Props) => {
+  const access=useAccess();
   const [activeTab, setActiveTab] = useState("Collections");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { data: collections, isPending } = useCollections(currentWorkspace?.id);
@@ -76,7 +78,7 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
             </div>
 
             <div className="p-4 border-b border-zinc-800">
-              <Button variant={"ghost"} onClick={() => setIsModalOpen(true)}>
+              <Button disabled={!access?.rights.editWorkspace} variant={"ghost"} onClick={() => setIsModalOpen(true)}>
                 <Plus className="w-4 h-4" />
                 <span className="text-sm font-medium">New</span>
               </Button>
@@ -88,7 +90,7 @@ const TabbedSidebar = ({ currentWorkspace }: Props) => {
                     <CollectionFolder collection={collection}/>
                   </div>
                 ))
-              ):(<EmptyCollections/>)
+              ):(access?.rights.editWorkspace?<EmptyCollections/>:<p className="p-4">No collections yet.</p>)
             }
           </div>
         );

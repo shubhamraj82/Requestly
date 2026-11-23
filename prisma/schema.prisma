@@ -28,6 +28,11 @@ model User {
 
   workspaces    Workspace[]  @relation("UserWorkspaces")
   memberships   WorkspaceMember[]
+  invitations WorkspaceInvitation[]
+  activity WorkspaceActivity[] @relation("actor")
+  targetedActivity WorkspaceActivity[] @relation("target")
+  authoredRequests Request[]
+  authoredSockets SocketDefinition[]
 
   @@unique([email])
   @@map("user")
@@ -88,6 +93,8 @@ model Workspace {
   ownerId String
   owner User @relation("UserWorkspaces", fields:[ownerId], references:[id])
 
+  invitations WorkspaceInvitation[]
+  activity WorkspaceActivity[]
   members WorkspaceMember[]
   socketRuns SocketRun[]
   collections Collection[]
@@ -100,24 +107,28 @@ model Workspace {
 
 enum MEMBER_ROLE {
   OWNER
+  EDITOR
   ADMIN
   MEMBER
 }
 
 model WorkspaceMember {
   id String @id @default(cuid())
-  role MEMBER_ROLE @default(ADMIN)
+  role MEMBER_ROLE @default(MEMBER)
+  permissions Json @default("{}")
+  status AccessStatus @default(ACTIVE)
 
   userId String
   workspaceId String
 
   user User @relation(fields:[userId], references:[id])
-  workspace Workspace @relation(fields:[workspaceId], references:[id])
+  workspace Workspace @relation(fields:[workspaceId], references:[id], onDelete:Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([userId, workspaceId])
+  @@index([workspaceId, status])
 }
 
 // COLLECTIONS
@@ -147,6 +158,8 @@ enum REST_METHOD {
 // REQUEST
 
 model Request {
+  authorId String?
+  author User? @relation(fields:[authorId], references:[id], onDelete:SetNull)
   id String @id @default(cuid())
   name String
   method REST_METHOD @default(GET)
@@ -183,6 +196,8 @@ model RequestRun {
 
 
 model SocketDefinition {
+  authorId String?
+  author User? @relation(fields:[authorId], references:[id], onDelete:SetNull)
   id String @id @default(cuid())
   collectionId String
   collection Collection @relation(fields:[collectionId], references:[id], onDelete:Cascade)
@@ -225,4 +240,48 @@ model SocketEvent {
   bytes Int
   createdAt DateTime @default(now())
   @@unique([runId, seq])
+}
+
+enum AccessStatus {
+  ACTIVE
+  SUSPENDED
+  REMOVED
+}
+
+model WorkspaceInvitation {
+  id String @id @default(cuid())
+  workspaceId String
+  workspace Workspace @relation(fields:[workspaceId], references:[id], onDelete:Cascade)
+  createdBy String
+  creator User @relation(fields:[createdBy], references:[id])
+  tokenHash String @unique
+  defaultRole MEMBER_ROLE @default(MEMBER)
+  defaultPermissions Json @default("{}")
+  expiresAt DateTime?
+  maxUses Int?
+  usageCount Int @default(0)
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([workspaceId, createdAt])
+}
+
+model WorkspaceActivity {
+  id String @id @default(cuid())
+  workspaceId String?
+  workspace Workspace? @relation(fields:[workspaceId], references:[id], onDelete:SetNull)
+  actorId String?
+  actor User? @relation("actor", fields:[actorId], references:[id], onDelete:SetNull)
+  action String
+  targetUserId String?
+  target User? @relation("target", fields:[targetUserId], references:[id], onDelete:SetNull)
+  metadata Json @default("{}")
+  createdAt DateTime @default(now())
+  @@index([workspaceId, createdAt])
+}
+
+model InviteRateLimit {
+  key String @id
+  count Int
+  resetsAt DateTime
+  @@index([resetsAt])
 }

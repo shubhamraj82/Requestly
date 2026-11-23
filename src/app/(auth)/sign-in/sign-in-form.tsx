@@ -18,13 +18,13 @@ import { FcGoogle } from "react-icons/fc";
 
 type Provider = "github" | "google";
 
-export default function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
+export default function SignInForm({ googleEnabled, callbackURL }: { googleEnabled: boolean; callbackURL: string }) {
   const [pendingProvider, setPendingProvider] = useState<Provider | null>(null);
 
   const handleSignIn = async (provider: Provider) => {
     setPendingProvider(provider);
     try {
-      await signIn.social({ provider, callbackURL: "/" });
+      await signIn.social({ provider, callbackURL });
     } catch {
       toast.error("Could not start sign in. Please try again.");
       setPendingProvider(null);

@@ -1,5 +1,7 @@
 "use server"
 
+import { authorize } from "../access/server";
+import { permissions } from "../access/permissions";
 import db from "@/lib/db";
 import {currentUser} from "@/modules/authentication/actions";
 import {MEMBER_ROLE} from "@prisma/client"
@@ -59,14 +61,15 @@ export async function getWorkspaces() {
         where:{
             OR:[
                 {ownerId: user.id},
-                {members: {some: {userId: user.id}}}
+                {members: {some: {userId: user.id, status:"ACTIVE"}}}
             ]
         },
+        include:{members:{where:{userId:user.id},select:{permissions:true}}},
         orderBy:{
             createdAt: "asc"
         }
     });
-    return workspaces;
+    return workspaces.filter(w => w.ownerId === user.id || permissions("MEMBER", w.members[0]?.permissions).view).map(({id,name,description,ownerId,createdAt,updatedAt}) => ({id,name,description,ownerId,createdAt,updatedAt}));
 }
 
 export async function createWorkspaces(name:string){
@@ -89,11 +92,10 @@ export async function createWorkspaces(name:string){
 }
 
 export const getWorkspaceById=async(id:string)=>{
-    const workspace=await db.workspace.findUnique({
+    const access=await authorize(id,"view");
+    const workspace=await db.workspace.findUniqueOrThrow({
         where:{id},
-        include:{
-            members:true
-        }
+
     })
-    return workspace;
+    return {...workspace, access};
 }

@@ -3,9 +3,11 @@ import { nanoid } from "nanoid";
 import { ResponseData } from "../components/response-viewer";
 
 interface SavedRequest {
+  collectionId: string;
   id: string;
   name: string;
   method: string;
+  authorId?: string | null;
   url: string;
   body?: string;
   headers?: string;
@@ -17,6 +19,7 @@ export type RequestTab = {
   id: string;
   title: string;
   method: string;
+  authorId?: string | null;
   url: string;
   body?: string;
   headers?: string;
@@ -109,6 +112,7 @@ export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
         headers: req.headers,
         parameters: req.parameters,
         requestId: req.id,
+        authorId:req.authorId,
         collectionId: req.collectionId,
         workspaceId: req.workspaceId,
         unsavedChanges: false,
@@ -126,6 +130,9 @@ export const useRequestPlaygroundStore = create<PlaygroundState>((set) => ({
       t.id === tabId
         ? {
             ...t,
+            requestId:savedRequest.id,
+            collectionId:savedRequest.collectionId,
+            authorId:savedRequest.authorId,
             id: savedRequest.id, // ✅ Replace temporary id with saved one
             title: savedRequest.name,
             method: savedRequest.method,

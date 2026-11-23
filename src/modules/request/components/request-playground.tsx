@@ -1,6 +1,7 @@
 "use client";
 
 import { useHotkeys } from "react-hotkeys-hook";
+import { useAccess } from "@/modules/workspace/hooks/workspace";
 import RequestEditor from "./request-editor";
 import TabBar from "./tab-bar";
 import { useRequestPlaygroundStore } from "../store/useRequestStore";
@@ -17,7 +18,10 @@ export default function PlaygroundPage() {
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
 
-  const {mutateAsync, isPending} = useSaveRequest(activeTab?.requestId!);
+  const access = useAccess();
+  const create = !!access?.rights.createRequests;
+  const editable = activeTab?.requestId ? !!access && (access.rights.editAll || (access.rights.editOwn && access.userId===activeTab.authorId)) : create;
+  const {mutateAsync} = useSaveRequest(activeTab?.requestId ?? "");
   const [showSaveModal, setShowSaveModal] = useState(false);
 
 
@@ -48,6 +52,7 @@ export default function PlaygroundPage() {
       return;
     }
 
+    if (!editable) return;
     if (activeTab.collectionId) {
   
       try {
@@ -71,7 +76,7 @@ export default function PlaygroundPage() {
     }
   },
   { preventDefault: true, enableOnFormTags: true },
-  [activeTab]
+  [activeTab,editable]
 );
 
 
@@ -80,6 +85,7 @@ export default function PlaygroundPage() {
     (e) => {
       e.preventDefault();
       e.stopPropagation();
+      if (!create) return;
       addTab();
       toast.success("New request created");
     },
@@ -87,7 +93,7 @@ export default function PlaygroundPage() {
       preventDefault: true,
       enableOnFormTags: true,
     },
-    []
+    [create]
   );
 
   if (!activeTab) {
@@ -96,9 +102,9 @@ export default function PlaygroundPage() {
         <section className="rest-start-card" aria-labelledby="rest-start-title">
           <div className="rest-start-intro">
             <h1 id="rest-start-title">REST workspace</h1>
-            <p>Enter an endpoint to start a request, or open one from Collections.</p>
+            <p>{create?"Enter an endpoint to start a request, or open one from Collections.":"Open a saved request from Collections to view it."}</p>
           </div>
-          <form onSubmit={(event) => {
+          {create && <form onSubmit={(event) => {
             event.preventDefault();
             const endpoint = new FormData(event.currentTarget).get("endpoint");
             addTab(typeof endpoint === "string" ? endpoint.trim() : "");
@@ -112,7 +118,7 @@ export default function PlaygroundPage() {
             <div className="rest-start-actions">
               <button type="submit" className="rest-action">New request <ArrowRight size={15} aria-hidden="true" /></button>
             </div>
-          </form>
+          </form>}
         </section>
       </div>
     );
@@ -121,9 +127,9 @@ export default function PlaygroundPage() {
   return (
     <div className="rest-playground flex flex-col h-full">
       <header className="rest-heading"><Braces className="rest-mark" aria-hidden="true"/><h1>REST API tester</h1></header>
-      <TabBar />
+      <TabBar canCreate={create} />
       <div className="flex-1 overflow-auto">
-        <RequestEditor />
+        <RequestEditor editable={editable} />
       </div>
 
       {/* Save Request Modal */}

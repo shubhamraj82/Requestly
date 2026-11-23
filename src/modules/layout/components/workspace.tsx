@@ -16,7 +16,7 @@ import {
 import CreateWorkspace from "./create-workspace";
 import { Separator } from "@/components/ui/separator";
 import { useWorkspaces } from "@/modules/workspace/hooks/workspace";
-import { useWorkspaceStore } from "../store";
+import { discardInaccessibleDrafts,useWorkspaceStore } from "../store";
 import { toast } from "sonner";
 
 const WorkSpace = () => {
@@ -26,9 +26,17 @@ const WorkSpace = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    if (workspaces && workspaces.length > 0 && !selectedWorkspace) {
+    if (!workspaces?.length) return;
+    const location = new URL(window.location.href);
+    const joined = workspaces.find(w=>w.id===location.searchParams.get("workspace"));
+    if (joined) {
+      setSelectedWorkspace(joined);
+      location.searchParams.delete("workspace");
+      window.history.replaceState(null,"",location);
+    } else if (!workspaces.some(w=>w.id===selectedWorkspace?.id)) {
       setSelectedWorkspace(workspaces[0]);
     }
+    discardInaccessibleDrafts(workspaces);
   }, [workspaces, selectedWorkspace, setSelectedWorkspace]);
 
   if (isLoading) {
@@ -45,7 +53,7 @@ const WorkSpace = () => {
     <>
       <Hint label="Change Workspace">
         <Select
-          value={selectedWorkspace?.id}
+          value={selectedWorkspace?.id??""}
           onValueChange={(id) => {
             const ws = workspaces.find((w) => w.id === id);
             if (ws && ws.id !== selectedWorkspace?.id) {

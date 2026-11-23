@@ -68,3 +68,40 @@ Start the local dev server with `WS_LOCAL_FIXTURE=1 npm run dev`, then run `node
 | Persistence and pagination | Connect to `/burst`. Refresh the page. Use Older events to find payload `0` and Return to live to find `119`. Review the run again after disconnecting. |
 | Failures and retries | Connect to `/reject` for handshake status 401, then `/close` for close code 1001. Enable retry and connect to `/close` again. History shows up to four attempts. Repeat and click Disconnect during backoff to cancel the remaining retries. |
 | Workspace isolation | Switch to a second workspace and check its collection and history pickers. Run `node tests/realtime.mjs` to verify that another user receives HTTP 403 when reading or controlling the first user's run. |
+
+## Workspace access and invitations
+
+Open **Invite** in the workspace header. **Invite Members** configures the role, permissions, expiration, and usage limit of a shareable link. **Manage Members** lists people, their status and join date, member actions, workspace settings, and recent activity. The workspace creator always retains administrative access.
+
+| Role | Default access |
+| --- | --- |
+| Admin | Manage workspace content, members, invitations, settings, and activity. Only admins can delete content. |
+| Editor | View content, edit collections, create and edit requests, and post updates. An admin can explicitly allow an editor to share existing view-only invitation links. |
+| Member | View the workspace and its saved content. Creating requests, editing, commenting, and inviting are disabled by default. |
+
+Each invitation grants its configured permissions when accepted. Regenerating a link revokes the previous link in the same transaction. Revoking a link affects future joins. Use **Suspend access** or **Remove member** for someone who has already joined. A suspended member requires admin restoration. A removed member needs an invitation issued after removal to rejoin.
+
+### Deployment
+
+1. Set the application's PostgreSQL connection, OAuth configuration, public Better Auth URL, and a stable, high-entropy server-side `BETTER_AUTH_SECRET` in each deployment environment.
+2. Run `npx prisma migrate deploy` against that environment, then `npm run build`. The migrations backfill owner memberships and attribute older requests and WebSocket definitions to the workspace creator.
+3. Serve the application over HTTPS. Exclude `/invite/*` paths from hosting, reverse-proxy, and analytics access logs or redact the token segment. The application suppresses those incoming request paths in Next.js development logs.
+4. Invitation records store a token hash. Recovering a shareable URL for an authorized user uses the signing secret. After rotating that secret, regenerate existing links to distribute them again.
+
+### Routes
+
+| Route | Purpose |
+| --- | --- |
+| `GET /invite/[token]` | Validate a link, set a short-lived HTTP-only continuation cookie, and redirect to sign-in or the join page. |
+| `/join` | Show the workspace and granted permissions. The Join Workspace action accepts the invitation and opens that workspace. |
+| `POST /api/invitations/accept` | Authenticated JSON acceptance with a token. Returns the joined workspace ID. |
+| `GET /api/workspaces/[workspace]/access` | Return current access, members, permitted invitations, and recent activity. Add `?activity=1&before=<event-id>` to page through older activity. |
+| `POST /api/workspaces/[workspace]/access` | Generate, share, replace, and revoke links, update roles and restrictions, post updates, rename, or delete a workspace. |
+
+Generate and accept operations are rate-limited per authenticated user in PostgreSQL. Redemption and membership changes lock the workspace row. Content mutations check permissions on the server, including the existing collection and request server actions and the WebSocket API.
+
+### Verify locally
+
+Start the app with the local PostgreSQL migrations applied. Run `node tests/workspace-access.mjs` to exercise invitation limits, authenticated joins, cross-workspace isolation, editing grants, admin-only deletion, suspensions, and audit retention. The test creates and cleans up temporary accounts and workspaces. Set `WS_TEST_BASE=http://127.0.0.1:PORT` if the app uses another port. The WebSocket regression suite above additionally requires `WS_LOCAL_FIXTURE=1` on the development server.
+
+Invitation links use the verified production domain supplied by Vercel. To use that domain during local development or override it with a custom domain, set `INVITE_BASE_URL` to the full HTTPS origin in `.env.local`. Generate shared invitations in the environment whose database will process the join.

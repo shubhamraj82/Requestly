@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Settings } from "../settings";
 
 export type Definition = {
+  authorId:string|null;
   id: string;
   collectionId: string;
   name: string;

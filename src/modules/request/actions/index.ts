@@ -1,5 +1,6 @@
 "use server";
 
+import { authorize, collectionAccess, requestAccess, writeContent } from "@/modules/workspace/access/server";
 import db from "@/lib/db";
 import { REST_METHOD } from "@prisma/client";
 import axios, { type AxiosRequestConfig } from "axios";
@@ -17,7 +18,8 @@ export const addRequestToCollection = async (
   collectionId: string,
   value: Request,
 ) => {
-  const request = await db.request.create({
+  const access = await collectionAccess(collectionId,"createRequests");
+  return writeContent(access,"createRequests",null,"request.created",tx=>tx.request.create({
     data: {
       name: value.name,
       method: value.method,
@@ -26,13 +28,14 @@ export const addRequestToCollection = async (
       headers: value.headers,
       parameters: value.parameters,
       collectionId,
+      authorId:access.userId,
     },
-  });
-  return request;
+  }));
 };
 
 export const saveRequest = async(id: string, value: Request) => {
-  const request = await db.request.update({
+  const access=await requestAccess(id,"editRequest");
+  return writeContent(access,"editRequest",access.authorId,"request.updated",tx=>tx.request.update({
     where: {
       id: id,
     },
@@ -44,15 +47,16 @@ export const saveRequest = async(id: string, value: Request) => {
       headers: value.headers,
       parameters: value.parameters,
     },
-  });
-  return request;
+  }));
 };
 
 export const deleteRequest = async (id: string) => {
-  await db.request.delete({ where: { id } });
+  const access=await requestAccess(id,"delete");
+  await writeContent(access,"delete",access.authorId,"request.deleted",tx=>tx.request.delete({where:{id}}));
 };
 
 export const getAllRequestFromCollection=async(collectionId:string)=>{
+    await collectionAccess(collectionId,"view");
     const requests = await db.request.findMany({
         where:{
             collectionId:collectionId
@@ -71,7 +75,7 @@ type SendResult = {
   error?: string;
 };
 
-export async function sendRequest(req: {
+async function sendRequest(req: {
   method: string;
   url: string;
   headers?: Record<string, string>;
@@ -143,6 +147,7 @@ function parseKeyValueConfig(value: unknown): Record<string, string> | undefined
 }
 
 export async function run(requestData: {
+  workspaceId: string;
   requestId?: string;
   method: string;
   url: string;
@@ -150,6 +155,13 @@ export async function run(requestData: {
   parameters?: unknown;
   body?: unknown;
 }) {
+  const check = async () => {
+    if (!requestData.requestId) return authorize(requestData.workspaceId, "createRequests");
+    const access = await requestAccess(requestData.requestId, "editRequest");
+    if (access.workspaceId !== requestData.workspaceId) throw new Error("Workspace access denied");
+    return access;
+  };
+  await check();
   try {
     const requestConfig = {
       method: requestData.method,
@@ -160,6 +172,7 @@ export async function run(requestData: {
     };
 
     const result = await sendRequest(requestConfig);
+    await check();
     const status = result.status ?? 0;
     const statusText = result.statusText ?? (result.error ? "Error" : "");
     const body = result.data ?? result.error ?? null;
@@ -171,18 +184,10 @@ export async function run(requestData: {
       durationMs: result.duration ?? 0,
     };
 
-    const requestRun = requestData.requestId
-      ? await db.requestRun.create({
-          data: { requestId: requestData.requestId, ...runData },
-        })
+    const requestId = requestData.requestId;
+    const requestRun = requestId
+      ? await persistRun(requestId, result, runData)
       : { id: "unsaved", ...runData, createdAt: new Date() };
-
-    if (requestData.requestId && !result.error && result.data !== undefined) {
-      await db.request.update({
-        where: { id: requestData.requestId },
-        data: { response: result.data, updatedAt: new Date() },
-      });
-    }
 
     return {
       success: !result.error,
@@ -210,69 +215,18 @@ export async function run(requestData: {
 }
 
 
+async function persistRun(requestId:string, result:SendResult, data: Omit<import("@prisma/client").Prisma.RequestRunUncheckedCreateInput,"requestId">) {
+  const access=await requestAccess(requestId,"editRequest");
+  return writeContent(access,"editRequest",access.authorId,"request.executed",async tx=>{
+    const run=await tx.requestRun.create({data:{...data,requestId}});
+    if(!result.error && result.data!==undefined) await tx.request.update({where:{id:requestId},data:{response:result.data}});
+    return run;
+  });
+}
 export async function runDirect(requestData: {
-  id: string;
-  method: string;
-  url: string;
-  headers?: Record<string, string>;
-  parameters?: Record<string, any>;
-  body?: any;
+  id: string; method: string; url: string; headers?: Record<string,string>;
+  parameters?: Record<string,string>; body?: unknown;
 }) {
-  try {
-    const requestConfig = {
-      method: requestData.method,
-      url: requestData.url,
-      headers: requestData.headers,
-      params: requestData.parameters,
-      body: requestData.body
-    };
-
-    const result = await sendRequest(requestConfig);
-
-    const requestRun = await db.requestRun.create({
-      data: {
-        requestId: requestData.id,
-        status: result.status || 0,
-        statusText: result.statusText || (result.error ? 'Error' : null),
-        headers: result.headers || "",
-        body: result.data ?? undefined,
-        durationMs: result.duration || 0
-      }
-    });
-
-    // Update request with latest response if successful
-    if (result.data && !result.error) {
-      await db.request.update({
-        where: { id: requestData.id },
-        data: {
-          response: result.data,
-          updatedAt: new Date()
-        }
-      });
-    }
-
-    return {
-      success: true,
-      requestRun,
-      result
-    };
-
-  } catch (error: any) {
-    const failedRun = await db.requestRun.create({
-      data: {
-        requestId: requestData.id,
-        status: 0,
-        statusText: 'Failed',
-        headers: "",
-        body: error.message,
-        durationMs: 0
-      }
-    });
-
-    return {
-      success: false,
-      error: error.message,
-      requestRun: failedRun
-    };
-  }
+  const access=await requestAccess(requestData.id,"editRequest");
+  return run({...requestData,workspaceId:access.workspaceId,requestId:requestData.id});
 }

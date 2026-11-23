@@ -1,3 +1,4 @@
+import { AccessError, workspaceAccess, writeContent } from "@/modules/workspace/access/server";
 import { z } from "zod";
 import { currentUser } from "@/modules/authentication/actions";
 import db from "@/lib/db";
@@ -16,22 +17,17 @@ import {
 export const runtime = "nodejs";
 const fail = (error: string, status = 400) =>
   Response.json({ error }, { status });
-const scope = (workspaceId: string, userId: string) => ({
-  id: workspaceId,
-  OR: [{ ownerId: userId }, { members: { some: { userId } } }],
-});
 async function access(workspace: string) {
   const user = await currentUser();
-  if (
-    !user ||
-    !(await db.workspace.findFirst({
-      where: scope(workspace, user.id),
-      select: { id: true },
-    }))
-  )
-    return null;
-  await recover();
-  return user;
+  if (!user) return null;
+  try {
+    const result = await workspaceAccess(workspace,user.id);
+    await recover();
+    return result;
+  } catch (error) {
+    if (error instanceof AccessError) return null;
+    throw error;
+  }
 }
 const streamHeaders = {
   "Content-Type": "text/event-stream",
@@ -42,9 +38,10 @@ const pageSize = 50;
 export async function GET(req: Request) {
   const p = new URL(req.url).searchParams;
   const workspaceId = p.get("workspace") || "";
-  if (!(await access(workspaceId))) return fail("Workspace unavailable", 403);
+  const viewer = await access(workspaceId);
+  if (!viewer) return fail("Workspace unavailable", 403);
   if (p.has("changes"))
-    return new Response(workspaceStream(workspaceId, req.signal), {
+    return new Response(workspaceStream(workspaceId, req.signal, async()=>{await workspaceAccess(workspaceId,viewer.userId);}), {
       headers: streamHeaders,
     });
   const runId = p.get("run");
@@ -84,54 +81,35 @@ export async function GET(req: Request) {
   }
   let seq = Number(req.headers.get("last-event-id") || p.get("after") || 0);
   let cancelled = false;
-  return new Response(
-    new ReadableStream({
-      async start(controller) {
-        const encoder = new TextEncoder();
-        const send = (value: string) =>
-          controller.enqueue(encoder.encode(value));
-        // Rotate periodically so each reconnect rechecks the session and membership.
-        const deadline = Date.now() + 15000;
-        try {
-          while (!cancelled && !req.signal.aborted && Date.now() < deadline) {
-            if ((controller.desiredSize ?? 0) <= 0) break;
-            const revision = eventRevision();
-            const current = await db.socketRun.findUniqueOrThrow({
-              where: { id: runId },
-              select: { status: true, endedAt: true, error: true },
-            });
-            const rows = await db.socketEvent.findMany({
-              where: { runId, seq: { gt: seq } },
-              orderBy: { seq: "asc" },
-              take: pageSize,
-            });
-            for (const row of rows) {
-              seq = row.seq;
-              send(`id: ${seq}\ndata: ${JSON.stringify(row)}\n\n`);
-            }
-            send(
-              `retry: 250\nevent: status\ndata: ${JSON.stringify(current)}\n\n`,
-            );
-            if (rows.length === pageSize) continue;
-            if (current.endedAt) {
-              send("event: end\ndata: {}\n\n");
-              break;
-            }
-            await waitForCommit(runId, revision, req.signal);
-          }
-          if (!cancelled) controller.close();
-        } catch (error) {
-          if (!cancelled) controller.error(error);
-        }
-      },
-      cancel() {
-        cancelled = true;
-      },
-    }),
-    {
-      headers: streamHeaders,
+  const deadline = Date.now() + 15000;
+  const encoder = new TextEncoder();
+  return new Response(new ReadableStream({
+    async pull(controller) {
+      if (cancelled || req.signal.aborted || Date.now() >= deadline) {
+        controller.close();
+        return;
+      }
+      const revision = eventRevision();
+      const [current, rows] = await Promise.all([
+        db.socketRun.findUniqueOrThrow({where:{id:runId,workspaceId},select:{status:true,endedAt:true,error:true}}),
+        db.socketEvent.findMany({where:{runId,seq:{gt:seq}},orderBy:{seq:"asc"},take:pageSize}),
+      ]);
+      // Verify membership immediately before delivering each batch to an open stream.
+      await workspaceAccess(workspaceId,viewer.userId);
+      if(cancelled) return;
+      const frames = rows.map(row=>{
+        seq=row.seq;
+        return `id: ${seq}\ndata: ${JSON.stringify(row)}\n\n`;
+      });
+      frames.push(`retry: 250\nevent: status\ndata: ${JSON.stringify(current)}\n\n`);
+      const finished = current.endedAt && rows.length < pageSize;
+      if(finished) frames.push("event: end\ndata: {}\n\n");
+      controller.enqueue(encoder.encode(frames.join("")));
+      if(finished) controller.close();
+      else if(rows.length < pageSize) await waitForCommit(runId,revision,req.signal);
     },
-  );
+    cancel(){cancelled=true;}
+  }),{headers:streamHeaders});
 }
 
 const bodySchema = z.object({
@@ -170,11 +148,13 @@ export async function POST(req: Request) {
   } = parsed.data;
   const user = await access(workspaceId);
   if (!user) return fail("Workspace unavailable", 403);
+  if (action === "delete" && user.role !== "ADMIN") return fail("Administrator required",403);
+  if (["connect","ping","send"].includes(action) && !user.rights.createRequests) return fail("Request permission required",403);
   if (["disconnect", "ping", "send"].includes(action)) {
     if (
       !id ||
       !(await db.socketRun.findFirst({
-        where: { id, workspaceId, userId: user.id },
+        where: { id, workspaceId, userId: user.userId },
       }))
     )
       return fail("Run unavailable", 404);
@@ -189,16 +169,15 @@ export async function POST(req: Request) {
       );
     }
   }
-  if (
-    id &&
-    !(await db.socketDefinition.findFirst({
-      where: { id, collection: { workspaceId } },
-    }))
-  )
-    return fail("Saved socket unavailable", 404);
+  const definition = id ? await db.socketDefinition.findFirst({where:{id,collection:{workspaceId}}}) : null;
+  if (id && !definition) return fail("Saved socket unavailable",404);
+  if (action === "save") {
+    const allowed = definition ? user.rights.editAll || (user.rights.editOwn && definition.authorId===user.userId) : user.rights.createRequests;
+    if (!allowed) return fail("Request permission required",403);
+  }
   if (action === "delete") {
     if (!id) return fail("Missing saved connection ID");
-    await db.socketDefinition.delete({ where: { id } });
+    await writeContent(user,"delete",definition?.authorId??null,"socket.deleted",tx=>tx.socketDefinition.delete({where:{id,collection:{workspaceId}}}));
     workspaceChanged(workspaceId);
     return Response.json({ id });
   }
@@ -237,9 +216,9 @@ export async function POST(req: Request) {
     )
       return fail("Choose a collection and name");
     const data = { name, collectionId: collection, settings };
-    const saved = id
-      ? await db.socketDefinition.update({ where: { id }, data })
-      : await db.socketDefinition.create({ data });
+    const saved = await writeContent(user,id?"editRequest":"createRequests",definition?.authorId??null,id?"socket.updated":"socket.created",tx=>id
+      ? tx.socketDefinition.update({where:{id,collection:{workspaceId}},data})
+      : tx.socketDefinition.create({data:{...data,authorId:user.userId}}));
     workspaceChanged(workspaceId);
     return Response.json(saved);
   }
@@ -253,18 +232,18 @@ export async function POST(req: Request) {
     })),
     headers: settings.headers.map((h) => ({ key: h.key, enabled: h.enabled })),
   };
-  const run = await db.socketRun.create({
+  const run = await writeContent(user,"createRequests",null,"socket.connected",tx=>tx.socketRun.create({
     data: {
       workspaceId,
-      userId: user.id,
+      userId: user.userId,
       definitionId: id,
       snapshot,
       status: "connecting",
       attempt,
     },
-  });
+  }));
   try {
-    start(run.id, workspaceId, settings, secrets);
+    start(run.id, workspaceId, settings, secrets, user.userId);
   } catch {
     await db.socketRun.update({
       where: { id: run.id },
