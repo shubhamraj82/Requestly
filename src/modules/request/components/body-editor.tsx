@@ -168,8 +168,8 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
       <Form {...form}>
         <div className="border border-zinc-700 rounded-lg overflow-hidden bg-zinc-900">
           {/* Header */}
-          <div className="bg-zinc-900 border-b border-zinc-900 px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="bg-zinc-900 border-b border-zinc-900 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-4">
               <h3 className="text-sm font-medium text-zinc-200">
                 Raw Request Body
               </h3>
@@ -269,15 +269,15 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
           </div>
 
           {/* Editor */}
-          <div className="relative h-80">
+          <div className="rest-body-input">
             <FormField
               control={form.control}
               name="body"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="h-full min-h-0">
                   <FormControl>
                     <MonacoEditor
-                      height="320px"
+                      height="100%"
                       value={field.value}
                       language={
                         contentType === "application/json"

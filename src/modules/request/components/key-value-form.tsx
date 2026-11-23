@@ -177,7 +177,7 @@ const KeyValueFormEditor: React.FC<KeyValueFormEditorProps> = ({
           </div>
 
           {/* Form Fields */}
-          <div className="space-y-2">
+          <div className="rest-field-rows space-y-2" role="region" aria-label={placeholder.description} tabIndex={0}>
             {fields.map((field, index) => (
               <div
                 key={field.id}

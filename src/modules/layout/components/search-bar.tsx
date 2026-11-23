@@ -1,18 +1,13 @@
 "use client";
-
-"use client";
 import { Search } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import {
-  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
-  CommandShortcut,
 } from "@/components/ui/command";
 
 const SearchBar = () => {
@@ -36,16 +31,14 @@ const SearchBar = () => {
       {/* Search Button */}
       <button
         onClick={() => setOpen(true)}
-        className="relative flex flex-1 cursor-text items-center justify-between self-stretch rounded bg-zinc-900 px-4 py-2 text-gray-500 transition hover:bg-zinc-800 hover:text-gray-200 focus-visible:bg-zinc-700 focus-visible:text-gray-200 overflow-hidden"
+        type="button"
+        aria-label="Search commands"
+        aria-haspopup="dialog"
+        className="flex h-8 items-center gap-2 rounded-md border border-zinc-700 bg-zinc-900 px-2 text-zinc-400 hover:border-zinc-500 hover:text-zinc-100 focus-visible:outline-2 focus-visible:outline-emerald-300 sm:w-48 lg:w-64"
       >
-        <span className="inline-flex flex-1 items-center">
-          <Search size={16} className="mr-2" />
-          <span className="text-xs text-left">Search</span>
-        </span>
-        <span className="flex space-x-1">
-          <kbd className="px-1 py-0.5 text-xs bg-zinc-700 rounded">Ctrl</kbd>
-          <kbd className="px-1 py-0.5 text-xs bg-zinc-700 rounded">K</kbd>
-        </span>
+        <Search size={15} aria-hidden="true" />
+        <span className="hidden text-xs sm:inline">Search commands</span>
+        <kbd className="ml-auto hidden rounded border border-zinc-700 px-1 text-[10px] sm:inline">Ctrl K</kbd>
       </button>
 
       {/* Command Dialog */}

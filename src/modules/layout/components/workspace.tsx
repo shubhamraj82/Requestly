@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Hint } from "@/components/ui/hint";
-import { Loader, Plus, User } from "lucide-react";
+import { Loader, Plus, PanelsTopLeft } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import {
   Select,
@@ -54,9 +54,9 @@ const WorkSpace = () => {
             }
           }}
         >
-          <SelectTrigger className="border border-indigo-400 bg-indigo-400/10 hover:bg-indigo-400/20 text-indigo-400 hover:text-indigo-300 flex flex-row items-center space-x-1">
-            <User className="size-4 text-indigo-400" />
-            <span className="text-sm text-indigo-400 font-semibold">
+          <SelectTrigger aria-label="Switch workspace" className="max-w-full rounded-md border-transparent bg-transparent px-2 text-zinc-200 hover:bg-zinc-800 dark:bg-transparent dark:hover:bg-zinc-800 sm:max-w-64">
+            <PanelsTopLeft className="size-4 shrink-0 text-zinc-400" />
+            <span className="min-w-0 truncate text-sm font-medium">
               <SelectValue placeholder="Select Workspace" />
             </span>
           </SelectTrigger>
@@ -74,7 +74,7 @@ const WorkSpace = () => {
             <Separator className="my-1" />
             <div className="flex flex-row items-center justify-between gap-3 p-2">
               <span className="text-sm font-semibold text-zinc-600">
-                My Worekspaces
+                My workspaces
               </span>
               <Button
                 size={"icon"}

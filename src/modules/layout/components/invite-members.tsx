@@ -8,8 +8,9 @@ import React from "react"
 const InviteMember=()=>{
     return (
         <Hint label="Invite Members">
-        <Button className="border border-emerald-400 bg-emerald-400/10 hover:bg-emerald-400/20 text-emerald-400 hover:text-emerald-300">
-            <UserPlus className="size-4 text-emerald-400"/>
+        <Button variant="ghost" aria-label="Invite members" className="h-8 rounded-md px-2 text-zinc-300 hover:bg-zinc-800 hover:text-white">
+            <UserPlus className="size-4" />
+            <span className="hidden sm:inline">Invite</span>
         </Button>
         </Hint>
     )

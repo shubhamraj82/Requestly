@@ -8,7 +8,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { REST_METHOD } from "@prisma/client";
 
-import { Braces, Plus } from "lucide-react";
+import { ArrowRight, Braces } from "lucide-react";
 import { useSaveRequest } from "../hooks/request";
 import SaveRequestToCollectionModal from "@/modules/collections/components/add-request-modal";
 
@@ -93,13 +93,27 @@ export default function PlaygroundPage() {
   if (!activeTab) {
     return (
       <div className="rest-welcome">
-        <div className="rest-welcome-card">
-          <Braces className="rest-mark" aria-hidden="true" />
-          <h1>REST API tester</h1>
-          <p>Create a request or open one from your collections.</p>
-          <button className="rest-action" onClick={addTab}><Plus size={16}/> New request</button>
-          <div className="rest-shortcuts"><span><kbd>Ctrl+G</kbd> New request</span><span><kbd>Ctrl+S</kbd> Save request</span></div>
-        </div>
+        <section className="rest-start-card" aria-labelledby="rest-start-title">
+          <div className="rest-start-intro">
+            <h1 id="rest-start-title">REST workspace</h1>
+            <p>Enter an endpoint to start a request, or open one from Collections.</p>
+          </div>
+          <form onSubmit={(event) => {
+            event.preventDefault();
+            const endpoint = new FormData(event.currentTarget).get("endpoint");
+            addTab(typeof endpoint === "string" ? endpoint.trim() : "");
+          }}>
+            <label htmlFor="rest-start-url">Request URL</label>
+            <div className="rest-start-endpoint">
+              <span>GET</span>
+              <input id="rest-start-url" name="endpoint" type="text" inputMode="url"
+                autoCapitalize="none" spellCheck={false} placeholder="https://api.example.com" />
+            </div>
+            <div className="rest-start-actions">
+              <button type="submit" className="rest-action">New request <ArrowRight size={15} aria-hidden="true" /></button>
+            </div>
+          </form>
+        </section>
       </div>
     );
   }

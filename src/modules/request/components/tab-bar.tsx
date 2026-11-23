@@ -62,7 +62,7 @@ export default function TabBar() {
 
         ))}
         <button
-          aria-label="New request" title="New request" onClick={addTab}
+          aria-label="New request" title="New request" onClick={() => addTab()}
           className="px-3 py-2 text-zinc-400 hover:text-white"
         >
           +
