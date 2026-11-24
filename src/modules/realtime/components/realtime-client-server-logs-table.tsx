@@ -4,6 +4,13 @@ import { Button } from "@/components/ui/button";
 import { api, endpoint, type Entry, type Run } from "../hooks/useWs";
 import { toast } from "sonner";
 
+import { ResponseChanges, useBaseline } from "@/modules/comparison/response-changes";
+import type { Sample } from "@/modules/comparison/diff";
+
+function messageSample(row: Entry): Sample {
+  return { label: `Message #${row.seq}`, body: row.payload, format: row.format === "binary" ? "binary" : "text" };
+}
+
 export default function Timeline({
   workspace,
   runId,
@@ -18,6 +25,9 @@ export default function Timeline({
   const [events, setEvents] = useState<Entry[]>([]);
   const [older, setOlder] = useState<Entry[] | null>(null);
   const [info, setInfo] = useState<Run | null>(null);
+  const controls = useBaseline(JSON.stringify(["ws", workspace, runId]));
+  const [latest, setLatest] = useState<Entry>();
+  const [comparing, setComparing] = useState(false);
   const [issue, setIssue] = useState("");
   useEffect(() => {
     let alive = true,
@@ -30,6 +40,7 @@ export default function Timeline({
         if (!alive) return;
         setInfo(run);
         setEvents(events);
+        setLatest([...events].reverse().find(row => row.kind === "received"));
         onStatus(run.status);
         if (run.endedAt) {
           onEnd(run);
@@ -42,6 +53,7 @@ export default function Timeline({
         stream.onerror = () => setIssue("Reconnecting to event history…");
         stream.onmessage = (e) => {
           const row: Entry = JSON.parse(e.data);
+          if (row.kind === "received") setLatest(old => !old || row.seq > old.seq ? row : old);
           setEvents((old) =>
             row.seq <= (old.at(-1)?.seq || 0) ? old : [...old, row].slice(-100),
           );
@@ -79,6 +91,10 @@ export default function Timeline({
           <pre className="overflow-auto">{JSON.stringify(info, null, 2)}</pre>
         </details>
       )}
+      <details open={comparing} onToggle={e => setComparing(e.currentTarget.open)}>
+        <summary className="cursor-pointer">What changed?</summary>
+        {comparing && <ResponseChanges {...controls} current={latest && messageSample(latest)} />}
+      </details>
       <div className="flex gap-2">
         <Button
           variant="outline"
@@ -114,6 +130,10 @@ export default function Timeline({
             {row.kind} · {row.format} · {row.bytes} B
           </summary>
           <pre className="whitespace-pre-wrap break-all">{row.payload}</pre>
+          {row.kind === "received" && <Button size="sm" variant="outline" onClick={() => {
+            controls.pin(messageSample(row));
+            setComparing(true);
+          }}>Pin message #{row.seq} as baseline</Button>}
         </details>
       ))}
     </section>

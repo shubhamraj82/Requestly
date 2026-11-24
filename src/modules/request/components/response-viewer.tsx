@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { RestResponseChanges } from "@/modules/comparison/response-changes";
 import Editor from "@monaco-editor/react";
 import {
   Clock,
@@ -41,6 +42,7 @@ interface Result {
 
 export interface ResponseData {
   success: boolean;
+  comparisonScope?: string;
   // A run can be missing when the request fails before it is persisted.
   requestRun?: RequestRun;
   result?: Result;
@@ -213,9 +215,17 @@ const ResponseViewer = ({ responseData }: Props) => {
                     <TestTube className="w-4 h-4 mr-2" />
                     Test Results
                   </TabsTrigger>
+                  {responseData.comparisonScope && <TabsTrigger value="changes" className="px-4 py-2 text-gray-400">What changed?</TabsTrigger>}
                 </TabsList>
               </div>
 
+              {responseData.comparisonScope && requestRun && <TabsContent value="changes" className="mt-0 overflow-auto">
+                <RestResponseChanges key={responseData.comparisonScope} scope={responseData.comparisonScope} current={{
+                  body: requestRun.body, status, label: requestRun.createdAt
+                    ? new Date(requestRun.createdAt).toLocaleTimeString(undefined, { fractionalSecondDigits: 3, hour: "2-digit", minute: "2-digit", second: "2-digit" })
+                    : "Request failed",
+                }} />
+              </TabsContent>}
               {(["json", "raw"] as const).map((view) => {
                 const text = view === "json" ? formattedJsonString : rawText;
                 return (

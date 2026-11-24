@@ -21,7 +21,7 @@ export interface RequestSuggestionParams {
   export interface JsonBodyGenerationParams {
     prompt: string;
     method?: string;
-    endpoint?: string;
+    endpoint?: string;                                                                                                                                                                                                                                                               
     context?: string;
     existingSchema?: Record<string, any>;
   }

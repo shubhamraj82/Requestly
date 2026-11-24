@@ -74,12 +74,12 @@ export function useRunRequest() {
       parameters?: string;
       body?: string;
     }) => await run({...requestData,workspaceId:workspace ?? ""}),
-    onMutate:()=>({workspace}),
+    onMutate:()=>({workspace, tabId: useRequestPlaygroundStore.getState().activeTabId}),
     onSuccess: (data,_request,origin) => {
       queryClient.invalidateQueries({ queryKey: ["requests"] });
       if(origin?.workspace !==useWorkspaceStore.getState().selectedWorkspace?.id)return;
       // @ts-ignore
-      setResponseViewerData(data);
+      setResponseViewerData({ ...data, comparisonScope: JSON.stringify([workspace, _request.requestId ?? origin?.tabId, _request.method, _request.url]) });
     },
   });
 }
