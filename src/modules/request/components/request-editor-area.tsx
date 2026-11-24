@@ -4,6 +4,7 @@ import { RequestTab } from "../store/useRequestStore";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 import KeyValueFormEditor from "./key-value-form";
+import { isJsonType, mediaType, withContentType } from "../validation";
 import BodyEditor from "./body-editor";
 import { toast } from "sonner";
 
@@ -35,7 +36,7 @@ const RequestEditorArea = ({ tab, updateTab,editable }: Props) => {
 
   const getBodyData = () => {
     return {
-      contentType: "application/json" as const,
+      contentType: isJsonType(mediaType(tab.headers)) ? "application/json" as const : "text/plain" as const,
       body: tab.body || "",
     };
   };
@@ -109,7 +110,10 @@ const RequestEditorArea = ({ tab, updateTab,editable }: Props) => {
       </TabsContent>
 
       <TabsContent value="body">
-        <BodyEditor readOnly={!editable} initialData={getBodyData()} onSubmit={handleBodyChange} />
+        <BodyEditor
+          onDraftChange={body => updateTab(tab.id, { body })}
+          onTypeChange={type => updateTab(tab.id, { headers: withContentType(tab.headers, type) })}
+          readOnly={!editable} initialData={getBodyData()} onSubmit={handleBodyChange} />
       </TabsContent>
     </Tabs>
   );

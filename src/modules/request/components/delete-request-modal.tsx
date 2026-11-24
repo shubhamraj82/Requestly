@@ -1,6 +1,7 @@
 "use client";
 
 import Modal from "@/components/ui/modal";
+import styles from "@/components/ui/workspace-dialog.module.css";
 import { useDeleteRequest } from "@/modules/request/hooks/request";
 import { toast } from "sonner";
 
@@ -32,6 +33,7 @@ export default function DeleteRequestModal({
 
   return (
     <Modal
+      className={`${styles.dialog} ${styles.danger} wrap-anywhere`}
       title="Delete Request"
       description={`Are you sure you want to delete “${requestName}”? This action cannot be undone.`}
       isOpen={isModalOpen}
@@ -40,7 +42,7 @@ export default function DeleteRequestModal({
       submitText={isPending ? "Deleting..." : "Delete"}
       submitVariant="destructive"
     >
-      <p className="rounded-lg border border-red-900/50 bg-red-950/30 p-3 text-sm text-red-200">
+      <p className="rounded-xl border border-rose-400/25 bg-rose-400/8 p-4 text-sm leading-6 text-rose-100">
         This request will be permanently removed from its collection.
       </p>
     </Modal>

@@ -111,9 +111,33 @@ const ResponseViewer = ({ responseData }: Props) => {
   const rawBody = requestRun?.body;
   const rawText = typeof rawBody === "string" ? rawBody : JSON.stringify(rawBody) ?? "";
 
+  const failed = status === 0 || (status !== undefined && status >= 400);
+  const errorFields = responseBody && typeof responseBody === "object"
+    ? responseBody as Record<string, unknown> : {};
+  const apiMessage = [errorFields.detail, errorFields.message, errorFields.error, errorFields.title]
+    .find((value): value is string => typeof value === "string" && !!value.trim());
+  const statusHints: Record<number, string> = {
+    400: "Check the request parameters and body against the API’s requirements.",
+    401: "Check the authentication credentials for this endpoint.",
+    403: "Check whether your credentials have permission for this endpoint.",
+    404: "Check the endpoint path and any resource ID in the URL.",
+    405: "Check which HTTP methods this endpoint accepts.",
+    415: "Check that the Content-Type header matches the body format.",
+    422: "Check the required fields, types, and values in your request.",
+    429: "Check the response headers for a retry interval.",
+  };
+  const errorDetail = apiMessage || (typeof responseBody === "string" && !responseBody.trimStart().startsWith("<") ? responseBody : "");
+  const errorHeading = status ? `HTTP ${status} ${statusText ?? ""}`.trim() : "No HTTP response";
   return (
     <div className="rest-result w-full text-white" role="region" aria-label="Response details" tabIndex={0}>
 
+        {failed && (
+          <div role="status" className="space-y-1 rounded-lg border border-rose-400/30 bg-rose-950/30 px-4 py-3 text-sm text-rose-100">
+            <strong>{errorHeading}</strong>
+            {errorDetail && <p className="whitespace-pre-wrap wrap-anywhere">{errorDetail.length > 500 ? errorDetail.slice(0, 500) + "…" : errorDetail}</p>}
+            {!!status && <p>{statusHints[status] ?? (status >= 500 ? "The server reported an error. Check its response body for details." : "Check the server’s response body for details.")}</p>}
+          </div>
+        )}
         {/* Status Header */}
         <Card className="bg-zinc-900 border-zinc-800 shrink-0 py-2">
           <CardHeader>
@@ -314,7 +338,7 @@ const ResponseViewer = ({ responseData }: Props) => {
               </TabsContent>
 
               <TabsContent value="test" className="mt-0">
-                <div className="p-6">
+                {failed ? <p className="p-6 text-rose-200">{errorHeading}. The request did not pass the status check.</p> : <div className="p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <CheckCircle className="w-5 h-5 text-green-400" />
                     <span className="text-green-400 font-medium">
@@ -339,7 +363,7 @@ const ResponseViewer = ({ responseData }: Props) => {
                       <CheckCircle className="w-4 h-4 text-green-400" />
                     </div>
                   </div>
-                </div>
+                </div>}
               </TabsContent>
             </Tabs>
           </CardContent>

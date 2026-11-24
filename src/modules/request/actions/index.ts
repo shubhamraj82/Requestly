@@ -1,5 +1,6 @@
 "use server";
 
+import { connectionProblem } from "../validation";
 import { authorize, collectionAccess, requestAccess, writeContent } from "@/modules/workspace/access/server";
 import db from "@/lib/db";
 import { REST_METHOD } from "@prisma/client";
@@ -114,7 +115,7 @@ async function sendRequest(req: {
   } catch (error: any) {
     const end = performance.now();
     return {
-      error: error instanceof Error ? error.message : String(error),
+      error: connectionProblem(axios.isAxiosError(error) ? error.code : undefined, error instanceof Error ? error.message : String(error)),
       duration: Math.round(end - start),
     };
   }

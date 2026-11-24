@@ -1,0 +1,80 @@
+.dialog[data-slot="dialog-content"] {
+  color-scheme: dark;
+  width: min(30rem, calc(100vw - 2rem));
+  max-width: none;
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  gap: 0;
+  padding: 0;
+  border: 1px solid #39393f;
+  border-radius: 1rem;
+  color: #f4f4f5;
+  background: #1d1d21;
+  box-shadow: 0 20px 64px rgb(0 0 0 / 34%);
+}
+
+.dialog [data-slot="dialog-header"] {
+  gap: .4rem;
+  padding: 1.4rem 3.75rem 1.2rem 1.5rem;
+  border-bottom: 1px solid #34343a;
+}
+
+.dialog [data-slot="dialog-title"] {
+  color: #fafafa;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.dialog [data-slot="dialog-description"] {
+  color: #b8b8c2;
+  line-height: 1.55;
+}
+
+.dialog > [data-slot="dialog-header"] + div {
+  min-width: 0;
+  padding: 1.35rem 1.5rem;
+}
+
+.dialog [data-slot="dialog-footer"] {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: flex-end;
+  gap: .65rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #34343a;
+  background: #19191d;
+}
+
+.dialog [data-slot="dialog-footer"] button {
+  min-height: 2.35rem;
+  padding-inline: 1rem;
+  border-radius: .6rem;
+}
+
+.dialog [data-slot="dialog-footer"] button:first-child {
+  border-color: #45454d;
+  color: #e4e4e7;
+  background: transparent;
+}
+
+.dialog [data-slot="dialog-footer"] button:first-child:hover {
+  background: #303036;
+}
+
+.dialog [data-slot="dialog-footer"] button:last-child {
+  background: #5651c8;
+  color: white;
+}
+
+.dialog [data-slot="dialog-footer"] button:last-child:hover {
+  background: #635ed8;
+}
+
+.danger [data-slot="dialog-footer"] button:last-child {
+  background: #c93243;
+}
+
+.danger [data-slot="dialog-footer"] button:last-child:hover {
+  background: #b42839;
+}

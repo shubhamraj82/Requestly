@@ -33,6 +33,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { jsonProblem } from "../validation";
 import { useGenerateJsonBody } from "@/modules/ai/hooks/ai-suggestion";
 
 import { useWorkspaceStore } from "@/modules/layout/store";
@@ -51,6 +52,8 @@ type BodyEditorFormData = z.infer<typeof bodyEditorSchema>;
 
 interface BodyEditorProps {
   readOnly?: boolean;
+  onDraftChange: (body: string) => void;
+  onTypeChange: (type: string) => void;
   initialData?: {
     contentType?: "application/json" | "text/plain";
     body?: string;
@@ -61,6 +64,8 @@ interface BodyEditorProps {
 
 const BodyEditor: React.FC<BodyEditorProps> = ({
   readOnly = false,
+  onDraftChange,
+  onTypeChange,
   initialData = { contentType: "application/json", body: "" },
   onSubmit,
   className,
@@ -85,9 +90,12 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
   const contentType = form.watch("contentType");
   const bodyValue = form.watch("body");
 
+  const problem = contentType === "application/json" && jsonProblem(bodyValue ?? "");
+
   // Handle editor value changes
   const handleEditorChange = (value?: string) => {
     form.setValue("body", value || "", { shouldValidate: true });
+    onDraftChange(value || "");
   };
 
   // Handle copy
@@ -125,7 +133,7 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
       });
 
       if (result?.jsonBody) {
-        form.setValue("body", JSON.stringify(result.jsonBody, null, 2));
+        handleEditorChange(JSON.stringify(result.jsonBody, null, 2));
       }
       setShowGenerateDialog(false);
       setPrompt("");
@@ -138,7 +146,7 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
     if (contentType === "application/json" && bodyValue) {
       try {
         const formatted = JSON.stringify(JSON.parse(bodyValue), null, 2);
-        form.setValue("body", formatted);
+        handleEditorChange(formatted);
       } catch (error) {
         console.error("Invalid JSON format");
       }
@@ -147,7 +155,7 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
 
   // Reset
   const handleReset = () => {
-    form.setValue("body", "");
+    handleEditorChange("");
   };
 
   const contentTypeOptions = [
@@ -184,7 +192,7 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
                     <FormItem>
                       <Select
                         disabled={readOnly}
-                        onValueChange={field.onChange}
+                        onValueChange={value => { field.onChange(value); onTypeChange(value); }}
                         defaultValue={field.value}
                       >
                         <FormControl>
@@ -313,6 +321,7 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
             />
           </div>
 
+          {problem && <p className="border-t border-rose-400/25 bg-rose-950/30 px-4 py-2 text-sm text-rose-200">{problem}</p>}
           {/* Footer */}
           <div className="bg-zinc-900 border-t border-zinc-700 px-4 py-3 flex items-center justify-between">
             <div className="text-xs text-zinc-400">
@@ -323,7 +332,7 @@ const BodyEditor: React.FC<BodyEditorProps> = ({
               type="button"
               size="sm"
               className="bg-indigo-400 hover:bg-indigo-500 text-white h-7"
-              disabled={readOnly}
+              disabled={readOnly || !!problem}
               onClick={() => form.handleSubmit(onSubmit)()}
             >
               Update Body

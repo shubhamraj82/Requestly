@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { compareSamples, type Difference, type Sample } from "./diff";
 
@@ -10,7 +10,7 @@ export function useBaseline(scope: string) {
   const key = ["response-baseline", scope];
   const { data: baseline } = useQuery<Sample | null>({
     queryKey: key,
-    enabled: false,
+    queryFn: skipToken,
     gcTime: Infinity,
     initialData: null,
   });

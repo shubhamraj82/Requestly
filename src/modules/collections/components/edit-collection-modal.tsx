@@ -1,6 +1,7 @@
 "use client";
 
 import Modal from "@/components/ui/modal";
+import styles from "@/components/ui/workspace-dialog.module.css";
 import { useUpdateCollection } from "../hooks/collection";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -37,7 +38,7 @@ const EditCollectionModal = ({
     <Modal
       title="Edit Collection"
       description="Rename your collection"
-      className="w-full max-w-md rounded-2xl border border-zinc-200 bg-gradient-to-b from-white to-zinc-50 text-zinc-900 shadow-2xl shadow-black/10 [&_[data-slot=dialog-header]]:gap-2 [&_[data-slot=dialog-title]]:text-xl [&_[data-slot=dialog-title]]:font-semibold [&_[data-slot=dialog-title]]:text-zinc-950 [&_[data-slot=dialog-description]]:leading-relaxed [&_[data-slot=dialog-description]]:text-zinc-600 [&_[data-slot=dialog-footer]]:gap-3"
+      className={styles.dialog}
       isOpen={isModalOpen}
       onClose={() => setIsModalOpen(false)}
       onSubmit={handleSubmit}
@@ -46,7 +47,7 @@ const EditCollectionModal = ({
     >
       <div className="space-y-4">
         <div className="relative">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-zinc-500">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-zinc-400">
             <svg
               aria-hidden="true"
               viewBox="0 0 24 24"
@@ -63,7 +64,7 @@ const EditCollectionModal = ({
             </svg>
           </div>
           <input
-            className="w-full rounded-xl border border-zinc-200 bg-white py-3 pl-11 pr-4 text-sm text-zinc-900 shadow-sm shadow-black/[0.03] outline-none transition placeholder:text-zinc-400 hover:border-zinc-300 focus:border-zinc-500 focus:ring-4 focus:ring-zinc-200/70"
+            className="h-11 w-full rounded-lg border border-zinc-700 bg-zinc-800 pl-11 pr-4 text-sm text-zinc-100 outline-none placeholder:text-zinc-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/50"
             placeholder="Collection name..."
             value={name}
             onChange={(e) => setName(e.target.value)}

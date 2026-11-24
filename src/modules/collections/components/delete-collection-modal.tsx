@@ -1,6 +1,7 @@
 "use client";
 
 import Modal from "@/components/ui/modal";
+import styles from "@/components/ui/workspace-dialog.module.css";
 import { useDeleteCollections } from "../hooks/collection";
 import React from "react";
 import { toast } from "sonner";
@@ -31,15 +32,15 @@ const DeleteCollectionModal = ({
     <Modal
       title="Delete Collection"
       description="Are you sure you want to delete this collection? This action cannot be undone."
-      className="w-full max-w-md overflow-hidden rounded-2xl border border-red-100 bg-white shadow-2xl shadow-zinc-950/10 [&_[data-slot=dialog-header]]:gap-2 [&_[data-slot=dialog-title]]:text-xl [&_[data-slot=dialog-title]]:font-semibold [&_[data-slot=dialog-description]]:leading-relaxed [&_[data-slot=dialog-footer]]:gap-3 [&_[data-slot=dialog-footer]>button:last-child]:bg-red-600 [&_[data-slot=dialog-footer]>button:last-child]:text-white [&_[data-slot=dialog-footer]>button:last-child]:shadow-sm [&_[data-slot=dialog-footer]>button:last-child]:hover:bg-red-700"
+      className={`${styles.dialog} ${styles.danger}`}
       isOpen={isModalOpen}
       onClose={() => setIsModalOpen(false)}
       onSubmit={handleDelete}
       submitText={isPending ? "Deleting..." : "Delete"}
       submitVariant="destructive"
     >
-      <div className="flex gap-3 rounded-xl border border-red-100 bg-red-50/80 p-4">
-        <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700">
+      <div className="flex gap-3 rounded-xl border border-rose-400/25 bg-rose-400/8 p-4">
+        <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-rose-400/15 text-rose-300">
           <svg
             aria-hidden="true"
             viewBox="0 0 24 24"
@@ -55,7 +56,7 @@ const DeleteCollectionModal = ({
             />
           </svg>
         </div>
-        <p className="text-sm leading-6 text-red-900">
+        <p className="text-sm leading-6 text-rose-100">
           Once deleted, all requests and data in this collection will be
           permanently removed.
         </p>

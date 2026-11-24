@@ -18,8 +18,8 @@ export default function RequestEditor({editable}:{editable:boolean}) {
     <div className="rest-editor" data-has-response={Boolean(responseViewerData)}>
       <section className="rest-card">
         <h2>Request</h2>
-        <RequestBar editable={editable} tab={activeTab} updateTab={updateTab} />
-        <RequestEditorArea editable={editable} tab={activeTab} updateTab={updateTab} />
+        <RequestBar key={activeTab.id} editable={editable} tab={activeTab} updateTab={updateTab} />
+        <RequestEditorArea key={activeTab.id} editable={editable} tab={activeTab} updateTab={updateTab} />
       </section>
       <section className="rest-card rest-response">
         <h2>{responseViewerData ? "Response Body" : "Response"}</h2>
