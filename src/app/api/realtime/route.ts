@@ -2,6 +2,7 @@ import { AccessError, workspaceAccess, writeContent } from "@/modules/workspace/
 import { z } from "zod";
 import { currentUser } from "@/modules/authentication/actions";
 import db from "@/lib/db";
+import { describeSession, readSession } from "@/modules/realtime/explain-session";
 import { settingsSchema } from "@/modules/realtime/settings";
 import {
   workspaceChanged,
@@ -70,6 +71,21 @@ export async function GET(req: Request) {
     where: { id: runId, workspaceId },
   });
   if (!run) return fail("Run unavailable", 404);
+  if (p.has("explain")) {
+    const through = Number(p.get("explain"));
+    if (!Number.isSafeInteger(through) || through < 1 || through > 2147483647)
+      return fail("Invalid explanation boundary");
+    const state = await readSession(through, (after, end) => {
+      req.signal.throwIfAborted();
+      return db.socketEvent.findMany({
+        where: { runId, seq: { gt: after, lte: end } },
+        orderBy: { seq: "asc" },
+        select: { seq: true, kind: true, format: true, payload: true },
+        take: pageSize,
+      });
+    });
+    return Response.json(p.has("live") ? state : describeSession(state));
+  }
   if (!p.has("stream")) {
     const before = Number(p.get("before") || 2147483647);
     const events = await db.socketEvent.findMany({

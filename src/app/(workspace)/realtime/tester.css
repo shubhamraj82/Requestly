@@ -226,3 +226,43 @@
 .ws-card button:not(.ws-primary):hover:enabled {
   background: #323941;
 }
+
+.ws-explain {
+  border-inline-start: 2px solid #668773;
+  background: #1a211e;
+  border-radius: 0 7px 7px 0;
+}
+.ws-card .ws-explain > button {
+  justify-content: flex-start;
+  width: 100%;
+  padding: 8px 12px;
+  color: #d3e9db;
+  background: transparent;
+  border: 0;
+}
+.ws-explain > button svg:last-child { margin-inline-start: auto; }
+.ws-explain > button[aria-expanded="true"] svg:last-child { transform: rotate(180deg); }
+.ws-findings { padding: 2px 12px 12px; }
+.ws-findings p { color: #bdc8c1; font-size: 12px; }
+.ws-findings ol { list-style: none; margin: 6px 0 0; padding: 0; }
+.ws-findings li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.ws-findings li[data-attention] { color: #ffcfaf; }
+.ws-findings a {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+  color: #afe6bc;
+  font: 13px ui-monospace, monospace;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.ws-event[data-source] { background: #233329; box-shadow: inset 2px 0 #afe6bc; padding-inline: 8px; }

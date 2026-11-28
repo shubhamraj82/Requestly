@@ -24,7 +24,13 @@ export async function startFixture(port = 0) {
     }
     if (url.pathname === "/burst")
       for (let i = 0; i < 120; i++) ws.send(String(i));
-    ws.on("message", (data, binary) => ws.send(data, { binary }));
+    ws.on("message", (data, binary) => {
+      if (url.pathname === "/subscribe" && !JSON.parse(data.toString()).channel) {
+        ws.send(JSON.stringify({ type: "subscription_rejected", reason: "channel is missing" }));
+        // Push the rejection off the latest history page without emitting any updates.
+        for (let i = 0; i < 30; i++) ws.ping();
+      } else ws.send(data, { binary });
+    });
     if (url.pathname === "/close") ws.close(1001, "fixture finished");
   });
   return server;
