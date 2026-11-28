@@ -6,7 +6,9 @@
     "dev": "docker compose up -d && next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:session": "node --experimental-strip-types --test tests/session-explanation.mjs",
+    "test:realtime:browser": "node tests/realtime.mjs --browser"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.124",
@@ -57,6 +59,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
+    "playwright-core": "^1.56.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

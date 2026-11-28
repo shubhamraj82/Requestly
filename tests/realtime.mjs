@@ -44,7 +44,7 @@ try {
   const cookie = await identity(userId),
     otherCookie = await identity(outsider);
   await db.workspace.create({
-    data: { id: workspace, ownerId: userId, name: "Socket test" },
+    data: { id: workspace, ownerId: userId, name: "Personal Workspace" },
   });
   const collection = await db.collection.create({
     data: { workspaceId: workspace, name: "Socket test" },
@@ -62,8 +62,9 @@ try {
       },
     );
   const json = async (res) => {
-    assert.equal(res.status, 200);
-    return res.json();
+    const body = await res.json();
+    assert.equal(res.status, 200, body.error);
+    return body;
   };
   const post = async (body) => json(await http({}, body));
   const detail = async (run, extra = {}) => json(await http({ run, ...extra }));
@@ -181,6 +182,8 @@ try {
     (await http({}, { action: "disconnect", id }, otherCookie)).status,
     403,
   );
+  assert.equal((await http({ run: id, explain: "1" }, undefined, otherCookie)).status, 403);
+  assert.equal((await http({ run: id, explain: "-1" })).status, 400);
   await post({ action: "disconnect", id });
   await wait(id, (d) => d.run.endedAt);
   await post({
@@ -211,14 +214,45 @@ try {
         Array.from({ length: 120 }, (_, i) => String(i)),
       );
       assert.equal(new Set(rows.map((e) => e.seq)).size, rows.length);
+      const explanation = await detail(run.id, { explain: String(rows.at(-1).seq) });
+      assert.equal(explanation.through, rows.at(-1).seq);
+      assert.ok(explanation.observations.some(o => o.text.includes("120 server messages")));
+      assert.ok(explanation.observations.some(o => o.seq === rows.find(e => e.kind === "connected").seq));
+      for (const observation of explanation.observations)
+        assert.ok(rows.some(e => e.seq === observation.seq));
     } else {
       const { run: result } = await wait(run.id, (d) => d.run.endedAt);
       if (path === "/reject") assert.equal(result.handshakeStatus, 401);
       else assert.equal(result.closeCode, 1001);
     }
   }
+  const subscription = await post({ action: "connect", settings: { ...settings, url: url + "/subscribe" } });
+  await wait(subscription.id, d => d.run.status === "connected");
+  await post({ action: "send", id: subscription.id, format: "json", payload: '{"action":"subscribe"}' });
+  const quiet = await wait(subscription.id, d => d.events.at(-1)?.seq >= 65);
+  const cutoff = quiet.events.at(-1).seq;
+  const summary = await detail(subscription.id, { explain: String(cutoff) });
+  const rejection = summary.observations.find(o => o.text.includes("channel is missing"));
+  assert.ok(rejection?.attention);
+  assert.ok(summary.observations.some(o => o.text.includes("No further updates") && o.seq === cutoff));
+  const disconnectSubscription = async () => {
+    await post({ action: "disconnect", id: subscription.id });
+    await wait(subscription.id, d => d.run.endedAt);
+  };
+  if (process.argv.includes("--browser")) {
+    const { checkExplanationUI } = await import("./session-explanation-browser.mjs");
+    const channel = randomUUID();
+    const sendLiveUpdate = () => post({
+      action: "send", id: subscription.id, format: "json",
+      payload: JSON.stringify({ action: "subscribe", channel }),
+    });
+    await checkExplanationUI({
+      base, cookie, workspace, run: subscription.id, source: rejection.seq,
+      sendLiveUpdate, channel, disconnectSubscription,
+    });
+  } else await disconnectSubscription();
   console.log(
-    "Passed authenticated live stream, echo, ping, binary, snapshots, access control, handshake failure, peer close and 120-message history.",
+    "Passed authenticated live stream, echo, ping, binary, snapshots, access control, handshake failure, peer close, 120-message history and cited subscription rejection.",
   );
 } finally {
   for (const client of fixture.clients) client.terminate();

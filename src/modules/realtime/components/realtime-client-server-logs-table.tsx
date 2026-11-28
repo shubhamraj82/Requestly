@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { api, endpoint, type Entry, type Run } from "../hooks/useWs";
+import { ExplainSession, eventId } from "./session-explanation";
 import { toast } from "sonner";
 
 import { ResponseChanges, useBaseline } from "@/modules/comparison/response-changes";
@@ -82,9 +83,45 @@ export default function Timeline({
     };
   }, [workspace, runId, onStatus, onEnd]);
   const rows = older ?? events;
+  const navigation = useRef(0);
+  const [source, setSource] = useState<{ seq: number }>();
+  useEffect(() => {
+    if (!source) return;
+    const row = document.getElementById(eventId(runId, source.seq)) as HTMLDetailsElement | null;
+    if (row) {
+      row.open = true;
+      row.querySelector("summary")?.focus({ preventScroll: true });
+      row.scrollIntoView({ block: "nearest" });
+    }
+  }, [source, runId]);
+
+  async function showPage(before: number, sourceSeq?: number) {
+    const request = ++navigation.current;
+    try {
+      const result = await api<{ events: Entry[] }>(
+        endpoint(workspace, { run: runId, before: String(before) }),
+      );
+      if (request !== navigation.current) return;
+      if (sourceSeq && !result.events.some(row => row.seq === sourceSeq))
+        throw Error("This log entry is no longer available.");
+      setOlder(result.events);
+      setSource(sourceSeq ? { seq: sourceSeq } : undefined);
+    } catch (e) {
+      if (request === navigation.current) toast.error((e as Error).message);
+    }
+  }
+  function jump(seq: number) {
+    if (!rows.some(row => row.seq === seq)) {
+      void showPage(seq + 1, seq);
+      return;
+    }
+    navigation.current++;
+    setSource({ seq });
+  }
   return (
     <section className="space-y-2">
       {issue && <p role="status">{issue}</p>}
+      <ExplainSession workspace={workspace} runId={runId} events={events} jump={jump} />
       {info && (
         <details>
           <summary>Connection details</summary>
@@ -99,29 +136,19 @@ export default function Timeline({
         <Button
           variant="outline"
           disabled={(rows[0]?.seq ?? 0) <= 1}
-          onClick={async () => {
-            try {
-              const result = await api<{ events: Entry[] }>(
-                endpoint(workspace, {
-                  run: runId,
-                  before: String(rows[0].seq),
-                }),
-              );
-              setOlder(result.events);
-            } catch (e) {
-              toast.error((e as Error).message);
-            }
-          }}
+          onClick={() => void showPage(rows[0].seq)}
         >
           Older events
         </Button>
         {older && (
-          <Button onClick={() => setOlder(null)}>Return to live</Button>
+          <Button onClick={() => { navigation.current++; setSource(undefined); setOlder(null); }}>Return to live</Button>
         )}
       </div>
       {[...rows].reverse().map((row) => (
         <details
           key={row.seq}
+          id={eventId(runId, row.seq)}
+          data-source={source?.seq === row.seq || undefined}
           className="ws-event border-b py-2"
           data-kind={row.kind}
         >
